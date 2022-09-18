@@ -1,0 +1,51 @@
+---
+title: "Enfoque estadístico del aprendizaje"
+output: html_notebook
+---
+
+# [**Trabajo práctico nº1: regresión lineal**]{.underline}
+
+### **Datos a utilizar:**
+
+Los datos con los que se trabajará en este TP provienen de la 3° Encuesta Mundial de Salud Escolar (EMSE) provistos por el Ministerio de Salud (link) de la República Argentina. Esta encuesta trata sobre temas de salud y hábitos de las personas en la escuela secundaria que pueden impactar en su salud.
+
+Los datasets que se comparten corresponden a un recorte (muestra) del dataset original, luego del tratamiento de valores atípicos e ingeniería de atributos.
+
+Las **variables** incluidas son:
+
+|             Variable              |                                                                         Descripción                                                                         |
+|:---------------------------:|:-----------------------------------------:|
+|            **record**             |                                                                    ID de la observación                                                                     |
+|             **edad**              |                                                                        Edad en años                                                                         |
+|            **genero**             |                                                                    género de la persona                                                                     |
+|        **nivel_educativo**        |                                                       nivel educativo en que se encuentra la persona                                                        |
+|            **altura**             |                                                                    altura en centímetros                                                                    |
+|             **peso**              |                                                                     peso en kilogramos                                                                      |
+|   **frecuencia_hambre_mensual**   | variable categórica que indica la frecuencia con la que la persona considera que pasó hambre en el último mes porque no había suficiente comida en su hogar |
+|  **dias_consumo_comida_rapida**   |                                          cuántos días comió en un restaurante de comida rápida en la última semana                                          |
+|     **edad_consumo_alcohol**      |                                                      edad en qué la persona comenzó a consumir alcohol                                                      |
+|    **consumo_diario_alcohol**     |                                                cantidad de tragos que la persona habitualmente toma por día                                                 |
+| **dias_actividad_fisica_semanal** |                    cantidad de días que la persona realizó una actividad física por un total de al menos 60 minutos en la última semana                     |
+|    **consumo_semanal_frutas**     |                                            cantidad de veces que la persona consumió frutas en la última semana                                             |
+|    **consumo_semanal_verdura**    |                                  cantidad de veces que la persona consumió gaseosas (al menos un vaso) en la última semana                                  |
+|   **consumo_semanal_gaseosas**    |                                     cantidad de veces que la persona consumió snacks/comida salada en la última semana                                      |
+|    **consumo_semanal_snacks**     |                                     cantidad de veces que la persona consumió snacks/comida salada en la última semana                                      |
+| **consumo_semanal_comida_grasa**  |                                    cantidad de veces que la persona consumió comidas altas en grasas en la última semana                                    |
+
+### **Consignas:**
+
+El objetivo general del trabajo es poder crear una serie de modelos lineales para explicar y predecir el peso de los estudiantes según la información que proporciona la EMSE.
+
+------------------------------------------------------------------------
+
+##### **Se cargan las librerías con las que se va a realizar el trabajo:**
+
+```{r}
+plot(cars)
+```
+
+##### **Importo el dataset:**
+
+```{r}
+print('hola')
+```
