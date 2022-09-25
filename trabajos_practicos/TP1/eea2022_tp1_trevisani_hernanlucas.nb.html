@@ -1753,9 +1753,6 @@ pre code {
 <div class="btn-group pull-right float-right">
 <button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
 <ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
-<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
-<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
-<li role="separator" class="divider"></li>
 <li><a id="rmd-download-source" href="#">Download Rmd</a></li>
 </ul>
 </div>
@@ -1770,12 +1767,13 @@ pre code {
 <!-- rnb-text-begin -->
 <div id="trabajo-práctico-nº1-regresión-lineal" class="section level1">
 <h1><u><strong>Trabajo práctico nº1: regresión lineal</strong></u></h1>
+<p> </p>
 <div id="datos-a-utilizar" class="section level3">
 <h3><strong>Datos a utilizar:</strong></h3>
 <p>Los datos con los que se trabajará en este TP provienen de la 3°
 Encuesta Mundial de Salud Escolar (EMSE) provistos por el Ministerio de
-Salud (link) de la República Argentina. Esta encuesta trata sobre temas
-de salud y hábitos de las personas en la escuela secundaria que pueden
+Salud de la República Argentina. Esta encuesta trata sobre temas de
+salud y hábitos de las personas en la escuela secundaria que pueden
 impactar en su salud.</p>
 <p>Los datasets que se comparten corresponden a un recorte (muestra) del
 dataset original, luego del tratamiento de valores atípicos e ingeniería
@@ -1877,30 +1875,186 @@ altas en grasas en la última semana</td>
 lineales para explicar y predecir el peso de los estudiantes según la
 información que proporciona la EMSE.</p>
 <hr />
-<div id="se-cargan-las-librerías-con-las-que-se-va-a-realizar-el-trabajo" class="section level5">
-<h5><strong>Se cargan las librerías con las que se va a realizar el
-trabajo:</strong></h5>
+<p> Se cargan las librerías con las que se va a realizar el trabajo:</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucGxvdChjYXJzKVxuYGBgIn0= -->
-<pre class="r"><code>plot(cars)</code></pre>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeSh0aWR5dmVyc2UpXG5saWJyYXJ5KGdncGxvdDIpXG5saWJyYXJ5KGtuaXRyKVxuYGBgIn0= -->
+<pre class="r"><code>library(tidyverse)
+library(ggplot2)
+library(knitr)</code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
-</div>
-<div id="importo-el-dataset" class="section level5">
-<h5><strong>Importo el dataset:</strong></h5>
+<p> </p>
+<p>Importo el dataset:</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucHJpbnQoJ2hvbGEnKVxuYGBgIn0= -->
-<pre class="r"><code>print(&#39;hola&#39;)</code></pre>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZW5jdWVzdGFfc2FsdWQgPC0gcmVhZC5jc3YoXCJlbmN1ZXN0YV9zYWx1ZF90cmFpbi5jc3ZcIilcbmBgYCJ9 -->
+<pre class="r"><code>encuesta_salud &lt;- read.csv(&quot;encuesta_salud_train.csv&quot;)</code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<p><br />
+</p>
+<div id="análisis-exploratorio" class="section level4">
+<h4><u><strong>1) Análisis exploratorio</strong></u></h4>
+<p><br />
+Primero, observo algunos registros del dataset:</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZW5jdWVzdGFfc2FsdWQgJT4lIHNhbXBsZV9uKDUpXG5gYGAifQ== -->
+<pre class="r"><code>encuesta_salud %&gt;% sample_n(5)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-frame-begin eyJtZXRhZGF0YSI6eyJjbGFzc2VzIjpbImRhdGEuZnJhbWUiXSwibnJvdyI6NSwibmNvbCI6MTYsInN1bW1hcnkiOnsiRGVzY3JpcHRpb24iOlsiZGYgWzUgw5cgMTZdIl19fSwicmRmIjoiSDRzSUFBQUFBQUFBQThWV1MyL1RRQkRlcEVsS0k5SlVvaW9VZ2JUSFhwcmlwaTlPSUZGNlFSUlVRT290bXE2M2lWVjdOK3phQWNHRm40SEVpU09IQ2lGdUhJbjRNZndFTG9WWlp6ZEozUWVOMm9LbHlYcm5tL2s4ajdVblcrdmI5ZkoybVJBeVJncjVIQmtyNGkwcHZuaStNYjlHVUlPYkhDbVFDYk8rUnFOcmVET0ZVakZXaER6OFFNamJuNFNzekJMeS9UTWhUMzROc0w1ZDFkNjd0V2dKSng2RFpra1lDR2tWVnpaNHhNVmdQNHFCb3lZcGNNL2ppa0wzaTF6dzdrU1NOaFg0a29xZ3cwUDZWSVpCSkgwSXFhUjFhMldoWjV3bHdnY1ZTRWV6MXNrNHF5QXkrTUtBQldtOHY5RmNVRFQxUHMxaU5xNGhtdVZZWG5ZMHJzTS9VUEFFa0s4bzcxSDJoN0FIS0hOMnZZdnlLTlA5NG1ZaUdMakdib0VDMnVGdmpnTlBzQnc4aXFTbnRIZU5vZVF6cDZIaTNURmQ4dEo4dEZYV1VsWWF5Nmo3aVVMSVpFdUdOT3ArMVBSbHdta2lwS1p0eWZCWFM3WFQ5NnA0UzRacStSQlZ4VnMweXZycHlra1QwZjFwY3VvMWhMdnN4bEVLTnF1ODNROW5ON2RFZ2E1Z1NSalgxRThVaUpqVEVBUHZmZ3RqYktlbXE5VHY3b01MYk1aa2tDYmFjOEZ1RzlpaTFjWGoxZld6cWcrRmhpV245Yk9IVnZGTVp6UFBHSlZrVlB1VDYzR2VLbDkyMUJmWDlmTTBiTlFvVmpjbFpmakc3WnZmd0FlcUlRUmNKTlVDMko2bVhQeXZJdjNMTW96S3Y1d3RHNFF4bUZyaHgxdkRpVVhyZlRHdnJnTk9oRFpYZnVETHpFd3ZDb2k0eTM3S0trdUtNNmw4dXl0d0g5eDlxY2tGVjI3NlZ0UEowT0Ird2lBT09rNWR3dUF3SmVmZTV0b2hzN3ZJbkhEQkFtaTBJTnBSdklIalhDY1FXb09iZmdDNndTVHFJdG5vNWRwUTBNYkZXa3liYVBvVzlyTnRzUm1uUmhhY1V4bjBkc29ORENNTkRNZHVvQU1HRGMwakVIQ0V3cW9idXlxSis1Vzhua1U3V05SQnFqZXljQk0wbDdydmZvUzhkK1l0ZWl1TDJ2VFRGbWZhTnFIa3E1cHJuWmtUK1hlOW1WSE05cGVGb0YxL25iTHNRd3kxWFlYK3VEdkl1SXpMZGh4Z0tFaHEvdXlWTXM0NVpSaEliK0RtTW1BMUVTWXFmNTYxRXJFMzd3MlpFaHRwenI1bWxZRzdlWHordDZVcXVWUEVSVE1Rdkg4SVdjdWRvbUlJTzl3MWJCSXJrUmFpMWxhQmlGMkdxTlcxV01iOXhwYVpESjBtelprYy9BSDgyZFUvK3dvQUFBPT0ifQ== -->
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["record"],"name":[1],"type":["int"],"align":["right"]},{"label":["edad"],"name":[2],"type":["int"],"align":["right"]},{"label":["genero"],"name":[3],"type":["chr"],"align":["left"]},{"label":["nivel_educativo"],"name":[4],"type":["chr"],"align":["left"]},{"label":["altura"],"name":[5],"type":["int"],"align":["right"]},{"label":["peso"],"name":[6],"type":["int"],"align":["right"]},{"label":["frecuencia_hambre_mensual"],"name":[7],"type":["chr"],"align":["left"]},{"label":["dias_consumo_comida_rapida"],"name":[8],"type":["int"],"align":["right"]},{"label":["edad_consumo_alcohol"],"name":[9],"type":["chr"],"align":["left"]},{"label":["consumo_diario_alcohol"],"name":[10],"type":["dbl"],"align":["right"]},{"label":["dias_actividad_fisica_semanal"],"name":[11],"type":["int"],"align":["right"]},{"label":["consumo_semanal_frutas"],"name":[12],"type":["chr"],"align":["left"]},{"label":["consumo_semanal_verdura"],"name":[13],"type":["chr"],"align":["left"]},{"label":["consumo_semanal_gaseosas"],"name":[14],"type":["chr"],"align":["left"]},{"label":["consumo_semanal_snacks"],"name":[15],"type":["chr"],"align":["left"]},{"label":["consumo_semanal_comida_grasa"],"name":[16],"type":["chr"],"align":["left"]}],"data":[{"1":"17819","2":"16","3":"Masculino","4":"1er año/10mo grado nivel Polimodal o 3er año nivel Secundario","5":"197","6":"67","7":"Nunca","8":"0","9":"10 o 11 años","10":"5","11":"7","12":"4 a 6 veces durante los últimos 7 días","13":"1 a 3 veces durante los últimos 7 días","14":"4 a 6 veces durante los últimos 7 días","15":"1 a 3 veces durante los últimos 7 días","16":"1 a 3 veces durante los últimos 7 días"},{"1":"31721","2":"13","3":"Femenino","4":"8vo grado nivel Primario/Polimodal  o 1er año nivel Secundario","5":"155","6":"40","7":"Rara vez","8":"1","9":"Nunca tomé alcohol más que unos pocos sorbos","10":"0","11":"4","12":"4 o más veces al día","13":"1 vez al día","14":"1 a 3 veces durante los últimos 7 días","15":"4 a 6 veces durante los últimos 7 días","16":"4 a 6 veces durante los últimos 7 días"},{"1":"13849","2":"15","3":"Masculino","4":"1er año/10mo grado nivel Polimodal o 3er año nivel Secundario","5":"179","6":"67","7":"Nunca","8":"0","9":"14 o 15 años","10":"0","11":"2","12":"2 veces al día","13":"1 a 3 veces durante los últimos 7 días","14":"1 a 3 veces durante los últimos 7 días","15":"No comí comida salada o snacks en los últimos 7 días","16":"1 a 3 veces durante los últimos 7 días"},{"1":"49839","2":"16","3":"Femenino","4":"3er año/12vo grado nivel Polimodal o 5to año nivel Secundario","5":"152","6":"57","7":"Nunca","8":"3","9":"12 o 13 años","10":"0","11":"2","12":"3 veces al día","13":"1 a 3 veces durante los últimos 7 días","14":"4 a 6 veces durante los últimos 7 días","15":"1 a 3 veces durante los últimos 7 días","16":"No comí comida alta en grasa en los últimos 7 días"},{"1":"20473","2":"15","3":"Masculino","4":"1er año/10mo grado nivel Polimodal o 3er año nivel Secundario","5":"173","6":"75","7":"Rara vez","8":"2","9":"12 o 13 años","10":"5","11":"7","12":"3 veces al día","13":"4 o más veces al día","14":"4 o más veces al día","15":"4 a 6 veces durante los últimos 7 días","16":"Dato perdido"}],"options":{"columns":{"min":{},"max":[10],"total":[16]},"rows":{"min":[10],"max":[10],"total":[5]},"pages":{}}}
+  </script>
+</div>
+<!-- rnb-frame-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<p>Observo las dimensiones del dataset:</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZ2xpbXBzZShlbmN1ZXN0YV9zYWx1ZCkgJT4lIGthYmxlKClcbmBgYCJ9 -->
+<pre class="r"><code>glimpse(encuesta_salud) %&gt;% kable()</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiUm93czogNywwMjRcbkNvbHVtbnM6IDE2XG4kIHJlY29yZCAgICAgICAgICAgICAgICAgICAgICAgIDxpbnQ+IDUwMiwgMjY0ODgsIDMxNDczLCAxNDE1NCwgMzY1NzgsIDUzNzMwLCAxMTg5MiwgMzU1NDksIDE0OTI4LCAxMTc1NCwgNDA4NTAsIDExMDM4LCAzMjgzMiwgMzEzMDAsIDMyNDk3LCA2OeKAplxuJCBlZGFkICAgICAgICAgICAgICAgICAgICAgICAgICA8aW50PiAxNywgMTUsIDE1LCAxNiwgMTcsIDE1LCAxMywgMTcsIDE3LCAxNiwgMTYsIDE0LCAxNSwgMTcsIDE1LCAxNCwgMTUsIDE3LCAxNywgMTYsIDE0LCAxMiwgMTUsIDE3LCAxNSwgMTYsIDHigKZcbiQgZ2VuZXJvICAgICAgICAgICAgICAgICAgICAgICAgPGNocj4gXCJGZW1lbmlub1wiLCBcIk1hc2N1bGlub1wiLCBcIk1hc2N1bGlub1wiLCBcIk1hc2N1bGlub1wiLCBcIk1hc2N1bGlub1wiLCBcIk1hc2N1bGlub1wiLCBcIkZlbWVuaW5vXCIsIFwiRmVtZW5pbm9cIiwgXCJNYXPigKZcbiQgbml2ZWxfZWR1Y2F0aXZvICAgICAgICAgICAgICAgPGNocj4gXCIyZG8gYcOxby8xMXZvIGdyYWRvIG5pdmVsIFBvbGltb2RhbCBvIDR0byBhw7FvIG5pdmVsIFNlY3VuZGFyaW9cIiwgXCIxZXIgYcOxby8xMG1vIGdyYWRvIG5pdmVsIFBvbGltb2RhbCBvIDNl4oCmXG4kIGFsdHVyYSAgICAgICAgICAgICAgICAgICAgICAgIDxpbnQ+IDE2NSwgMTc4LCAxNzIsIDE3MCwgMTcwLCAxNzgsIDE1NiwgMTYzLCAxNjQsIDE2NywgMTg1LCAxNDYsIDE4MCwgMTc1LCAxODMsIDE2NSwgMTY1LCAxNTcsIDE2NSwgMTcwLCAxNzQsIOKAplxuJCBwZXNvICAgICAgICAgICAgICAgICAgICAgICAgICA8aW50PiA2MiwgNjIsIDYyLCA2NSwgNzUsIDg4LCA0NiwgNjAsIDU3LCA1MSwgMTAwLCAzMywgNjIsIDcwLCA4MCwgNjAsIDQ3LCA1MCwgNTAsIDcwLCA3NSwgNTUsIDY0LCA1OSwgODYsIDUxLCDigKZcbiQgZnJlY3VlbmNpYV9oYW1icmVfbWVuc3VhbCAgICAgPGNocj4gXCJSYXJhIHZlelwiLCBcIlJhcmEgdmV6XCIsIFwiTnVuY2FcIiwgXCJOdW5jYVwiLCBcIlJhcmEgdmV6XCIsIFwiTnVuY2FcIiwgXCJOdW5jYVwiLCBcIk51bmNhXCIsIFwiTnVuY2FcIiwgXCJOdW5jYVwiLCBcIk51bmNh4oCmXG4kIGRpYXNfY29uc3Vtb19jb21pZGFfcmFwaWRhICAgIDxpbnQ+IDAsIDAsIDMsIDEsIDEsIDIsIDAsIDAsIDAsIDMsIDQsIDIsIDEsIDEsIDMsIDAsIDAsIDAsIDAsIDEsIDAsIDYsIDAsIDEsIDAsIDIsIDAsIDIsIDAsIDAsIDUsIDEsIDAsIDAsIDEsIOKAplxuJCBlZGFkX2NvbnN1bW9fYWxjb2hvbCAgICAgICAgICA8Y2hyPiBcIjE0IG8gMTUgYcOxb3NcIiwgXCI3IGHDsW9zIG8gbWVub3NcIiwgXCJOdW5jYSB0b23DqSBhbGNvaG9sIG3DoXMgcXVlIHVub3MgcG9jb3Mgc29yYm9zXCIsIFwiMTQgbyAxNSBhw7Fvc1wiLCBcIjE2IG8gMeKAplxuJCBjb25zdW1vX2RpYXJpb19hbGNvaG9sICAgICAgICA8ZGJsPiA1LjAsIDQuMCwgMC4wLCAwLjAsIDAuMCwgNS4wLCAxLjAsIDAuNSwgNS4wLCAwLjAsIDUuMCwgMC4wLCAwLjAsIDIuMCwgMS4wLCAwLjAsIDUuMCwgMC4wLCAxLjAsIDEuMCwgMC41LCDigKZcbiQgZGlhc19hY3RpdmlkYWRfZmlzaWNhX3NlbWFuYWwgPGludD4gNywgNywgNywgNywgMCwgNywgMCwgMiwgNywgMywgMiwgMiwgNywgMSwgNCwgMCwgMSwgNiwgNSwgNywgMywgMCwgNywgNSwgMiwgMiwgNCwgMiwgNywgNCwgNywgMCwgNiwgNCwgMCwg4oCmXG4kIGNvbnN1bW9fc2VtYW5hbF9mcnV0YXMgICAgICAgIDxjaHI+IFwiTm8gY29tw60gZnJ1dGFzIGR1cmFudGUgbG9zIMO6bHRpbW9zIDcgZMOtYXNcIiwgXCJObyBjb23DrSBmcnV0YXMgZHVyYW50ZSBsb3Mgw7psdGltb3MgNyBkw61hc1wiLCBcIk5vIGNvbcOtIGZydXRhc+KAplxuJCBjb25zdW1vX3NlbWFuYWxfdmVyZHVyYSAgICAgICA8Y2hyPiBcIjQgYSA2IHZlY2VzIGR1cmFudGUgbG9zIMO6bHRpbW9zIDcgZMOtYXNcIiwgXCI0IGEgNiB2ZWNlcyBkdXJhbnRlIGxvcyDDumx0aW1vcyA3IGTDrWFzXCIsIFwiMSB2ZXogYWwgZMOtYVwiLCBcIjQgbyDigKZcbiQgY29uc3Vtb19zZW1hbmFsX2dhc2Vvc2FzICAgICAgPGNocj4gXCIxIGEgMyB2ZWNlcyBkdXJhbnRlIGxvcyDDumx0aW1vcyA3IGTDrWFzXCIsIFwiMSBhIDMgdmVjZXMgZHVyYW50ZSBsb3Mgw7psdGltb3MgNyBkw61hc1wiLCBcIjQgYSA2IHZlY2VzIGR1cmFudGUg4oCmXG4kIGNvbnN1bW9fc2VtYW5hbF9zbmFja3MgICAgICAgIDxjaHI+IFwiMSBhIDMgdmVjZXMgZHVyYW50ZSBsb3Mgw7psdGltb3MgNyBkw61hc1wiLCBcIk5vIGNvbcOtIGNvbWlkYSBzYWxhZGEgbyBzbmFja3MgZW4gbG9zIMO6bHRpbW9zIDcgZMOtYXNcIiwgXCI0IGEgNiDigKZcbiQgY29uc3Vtb19zZW1hbmFsX2NvbWlkYV9ncmFzYSAgPGNocj4gXCJObyBjb23DrSBjb21pZGEgYWx0YSBlbiBncmFzYSBlbiBsb3Mgw7psdGltb3MgNyBkw61hc1wiLCBcIjQgYSA2IHZlY2VzIGR1cmFudGUgbG9zIMO6bHRpbW9zIDcgZMOtYXNcIiwgXCJObyBjb23DrSDigKZcbiJ9 -->
+<pre><code>Rows: 7,024
+Columns: 16
+$ record                        &lt;int&gt; 502, 26488, 31473, 14154, 36578, 53730, 11892, 35549, 14928, 11754, 40850, 11038, 32832, 31300, 32497, 69…
+$ edad                          &lt;int&gt; 17, 15, 15, 16, 17, 15, 13, 17, 17, 16, 16, 14, 15, 17, 15, 14, 15, 17, 17, 16, 14, 12, 15, 17, 15, 16, 1…
+$ genero                        &lt;chr&gt; &quot;Femenino&quot;, &quot;Masculino&quot;, &quot;Masculino&quot;, &quot;Masculino&quot;, &quot;Masculino&quot;, &quot;Masculino&quot;, &quot;Femenino&quot;, &quot;Femenino&quot;, &quot;Mas…
+$ nivel_educativo               &lt;chr&gt; &quot;2do año/11vo grado nivel Polimodal o 4to año nivel Secundario&quot;, &quot;1er año/10mo grado nivel Polimodal o 3e…
+$ altura                        &lt;int&gt; 165, 178, 172, 170, 170, 178, 156, 163, 164, 167, 185, 146, 180, 175, 183, 165, 165, 157, 165, 170, 174, …
+$ peso                          &lt;int&gt; 62, 62, 62, 65, 75, 88, 46, 60, 57, 51, 100, 33, 62, 70, 80, 60, 47, 50, 50, 70, 75, 55, 64, 59, 86, 51, …
+$ frecuencia_hambre_mensual     &lt;chr&gt; &quot;Rara vez&quot;, &quot;Rara vez&quot;, &quot;Nunca&quot;, &quot;Nunca&quot;, &quot;Rara vez&quot;, &quot;Nunca&quot;, &quot;Nunca&quot;, &quot;Nunca&quot;, &quot;Nunca&quot;, &quot;Nunca&quot;, &quot;Nunca…
+$ dias_consumo_comida_rapida    &lt;int&gt; 0, 0, 3, 1, 1, 2, 0, 0, 0, 3, 4, 2, 1, 1, 3, 0, 0, 0, 0, 1, 0, 6, 0, 1, 0, 2, 0, 2, 0, 0, 5, 1, 0, 0, 1, …
+$ edad_consumo_alcohol          &lt;chr&gt; &quot;14 o 15 años&quot;, &quot;7 años o menos&quot;, &quot;Nunca tomé alcohol más que unos pocos sorbos&quot;, &quot;14 o 15 años&quot;, &quot;16 o 1…
+$ consumo_diario_alcohol        &lt;dbl&gt; 5.0, 4.0, 0.0, 0.0, 0.0, 5.0, 1.0, 0.5, 5.0, 0.0, 5.0, 0.0, 0.0, 2.0, 1.0, 0.0, 5.0, 0.0, 1.0, 1.0, 0.5, …
+$ dias_actividad_fisica_semanal &lt;int&gt; 7, 7, 7, 7, 0, 7, 0, 2, 7, 3, 2, 2, 7, 1, 4, 0, 1, 6, 5, 7, 3, 0, 7, 5, 2, 2, 4, 2, 7, 4, 7, 0, 6, 4, 0, …
+$ consumo_semanal_frutas        &lt;chr&gt; &quot;No comí frutas durante los últimos 7 días&quot;, &quot;No comí frutas durante los últimos 7 días&quot;, &quot;No comí frutas…
+$ consumo_semanal_verdura       &lt;chr&gt; &quot;4 a 6 veces durante los últimos 7 días&quot;, &quot;4 a 6 veces durante los últimos 7 días&quot;, &quot;1 vez al día&quot;, &quot;4 o …
+$ consumo_semanal_gaseosas      &lt;chr&gt; &quot;1 a 3 veces durante los últimos 7 días&quot;, &quot;1 a 3 veces durante los últimos 7 días&quot;, &quot;4 a 6 veces durante …
+$ consumo_semanal_snacks        &lt;chr&gt; &quot;1 a 3 veces durante los últimos 7 días&quot;, &quot;No comí comida salada o snacks en los últimos 7 días&quot;, &quot;4 a 6 …
+$ consumo_semanal_comida_grasa  &lt;chr&gt; &quot;No comí comida alta en grasa en los últimos 7 días&quot;, &quot;4 a 6 veces durante los últimos 7 días&quot;, &quot;No comí …</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<p>Aquí se puede ver que el dataset cuenta con 7024 observaciones para
+las cuales se tienen 16 variables (7 de ellas numéricas y 9
+categóricas). La variable peso, que es una de las variables numéricas,
+es la variable a explicar con el resto.</p>
+<p>A continuación, observamos si las variables numéricas - y
+fundamentalmente el peso - están correlacionadas o no. A su vez, se
+procede a aperturar por el género de cada una de las personas:</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<p>Luego, vemos que existen X categorías de la “frecuencia de hambre
+mensual”: a b y c</p>
+<p>Para cada una de ellas, observamos como se distribuyen el consumo
+semanal de verdura y el consumo semanal de comida grasa:</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<p>En estos gráficos, se puede observar que:</p>
+<p>¿Cuáles son las principales características que observa en estos
+gráficos?</p>
+</div>
+<div id="modelo-inicial" class="section level4">
+<h4><u><strong>2) Modelo inicial</strong></u></h4>
+<p>Se plantea que una primera alternativa para modelar el peso es:</p>
+<p><span class="math display">\[
+E(peso) = \beta_{0} + \beta_{1} altura+ \beta_{2} edad+ \beta_{3} genero
++ \beta_{4} diasActividadF isicaSemanal + \beta_{5} consumoDiarioAlcohol
+\]</span></p>
+<p>Ajusto el modelo lineal:</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubG1cbnN1bW1hcnlcbmBgYCJ9 -->
+<pre class="r"><code>lm
+summary</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<p>¿Cuál es la interpretación de cada uno de los coeficientes estimados?
+¿Son significativos? ¿El modelo resulta significativo para explicar el
+peso? ¿Qué porcentaje de la variabilidad explica el modelo?</p>
+</div>
+<div id="modelo-categóricas" class="section level4">
+<h4>3) Modelo categóricas</h4>
+<p>Se sugiere probar un modelo que incopore el consumo semanal de snacks
+y una interacción entre el género y la edad, en lugar de actividad
+física y consumo de alcohol:</p>
+<p><span class="math display">\[
+E(peso) = \beta_{0} + \beta_{1} altura+ \beta_{2} edad+ \beta_{3} genero
++ \beta_{4} consumoSemanalSnacks + \beta_{5} genero.edad
+\]</span></p>
+<p>Además se pide explícitamente que la categoría “No comí comida salada
+o snacks en los últimos 7 días” de la variable consumoSemanalSnacks se
+encuentre como nivel/categoría basal.</p>
+<p>¿Cuál es la interpretación de los coeficientes estimados para las
+categorías de consumoSemanalSnacks y genero . edad? ¿Son significativas?
+¿Qué porcentaje de la variabilidad explica el modelo?</p>
+<p>En caso de detectar que existen categorías no significativas de la
+variable consumoSemanalSnacks evaluar si la variable es significativa en
+su conjunto y, en caso afirmativo, proponer una redefinición de las
+mismas que permita obtener una mayor proporción de categorías
+significativas individualmente. Luego, analizar si existen cambios en la
+variabilidad explicada por el modelo.</p>
+</div>
+<div id="modelos-propios-y-evaluación" class="section level4">
+<h4><u><strong>4) Modelos propios y evaluación</strong></u></h4>
+<p>Realizar 2 modelos lineales múltiples adicionales y explicar
+brevemente la lógica detrás de los mismos (se valorará la creación y/o
+inclusión de variables nuevas).</p>
+<p>Evaluar la performance del modelo inicial, el modelo categóricas con
+las categorías redefinidas de la variable consumoSemanalSnacks y los
+modelos desarrollados en este punto en el dataset de entrenamiento y
+evaluación (usar dataset “encuesta_salud_test.csv”). La evaluación de
+performance consiste en compara</p>
+<p>r la performance en términos del R cuadrado ajustado, RMSE y MAE
+sobre el set de entrenamiento y en términos de RMSE y MAE sobre el set
+de evaluación.</p>
+<p>¿Cuál es el mejor modelo para nuestro objetivo de predecir el peso?
+¿Por qué?</p>
+</div>
+<div id="diagnóstico-del-modelo" class="section level4">
+<h4><u><strong>5) Diagnóstico del modelo</strong></u></h4>
+<p>Analizar en profundidad el cumplimiento de los supuestos del modelo
+lineal para el modelo inicial.</p>
+</div>
+<div id="modelo-robusto" class="section level4">
+<h4><u><strong>6) Modelo robusto</strong></u></h4>
+<p>Leer el archivo “encuesta_salud_modelo6.csv”. Este último consiste en
+el dataset original de train con la</p>
+<p>incorporación de algunas observaciones adicionales que pueden incluir
+valores atípicos. En particular, observar</p>
+<p>la relación entre peso y altura ¿Qué ocurre con estos nuevos
+datos?</p>
+<p>Entrenar el modelo inicial con estos nuevos datos y comentar qué se
+observa en los coeficientes estimados y</p>
+<p>las métricas de evaluación (R cuadrado ajustado, RMSE y MAE) respecto
+al modelo entrenado con el set de</p>
+<p>entrenamiento original.</p>
+<p>Entrenar un modelo robusto con la misma especificación que el modelo
+inicial sobre los nuevos datos.</p>
+<p>Comparar los coeficientes y su performance (RMSE y MAE) respecto al
+modelo inicial no robusto entrenado</p>
+<p>en este punto. ¿Qué puede concluir al respecto?</p>
+<p>Nota: los registros que se suman en este punto son observaciones
+ficticias que se generaron a partir de</p>
+<p>observaciones reales del set de datos original.</p>
+<!-- rnb-text-end -->
 </div>
 </div>
 </div>
 
-<div id="rmd-source-code">LS0tCnRpdGxlOiAiRW5mb3F1ZSBlc3RhZMOtc3RpY28gZGVsIGFwcmVuZGl6YWplIgpvdXRwdXQ6IGh0bWxfbm90ZWJvb2sKLS0tCgojIFsqKlRyYWJham8gcHLDoWN0aWNvIG7CujE6IHJlZ3Jlc2nDs24gbGluZWFsKipdey51bmRlcmxpbmV9CgojIyMgKipEYXRvcyBhIHV0aWxpemFyOioqCgpMb3MgZGF0b3MgY29uIGxvcyBxdWUgc2UgdHJhYmFqYXLDoSBlbiBlc3RlIFRQIHByb3ZpZW5lbiBkZSBsYSAzwrAgRW5jdWVzdGEgTXVuZGlhbCBkZSBTYWx1ZCBFc2NvbGFyIChFTVNFKSBwcm92aXN0b3MgcG9yIGVsIE1pbmlzdGVyaW8gZGUgU2FsdWQgKGxpbmspIGRlIGxhIFJlcMO6YmxpY2EgQXJnZW50aW5hLiBFc3RhIGVuY3Vlc3RhIHRyYXRhIHNvYnJlIHRlbWFzIGRlIHNhbHVkIHkgaMOhYml0b3MgZGUgbGFzIHBlcnNvbmFzIGVuIGxhIGVzY3VlbGEgc2VjdW5kYXJpYSBxdWUgcHVlZGVuIGltcGFjdGFyIGVuIHN1IHNhbHVkLgoKTG9zIGRhdGFzZXRzIHF1ZSBzZSBjb21wYXJ0ZW4gY29ycmVzcG9uZGVuIGEgdW4gcmVjb3J0ZSAobXVlc3RyYSkgZGVsIGRhdGFzZXQgb3JpZ2luYWwsIGx1ZWdvIGRlbCB0cmF0YW1pZW50byBkZSB2YWxvcmVzIGF0w61waWNvcyBlIGluZ2VuaWVyw61hIGRlIGF0cmlidXRvcy4KCkxhcyAqKnZhcmlhYmxlcyoqIGluY2x1aWRhcyBzb246Cgp8ICAgICAgICAgICAgIFZhcmlhYmxlICAgICAgICAgICAgICB8ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIERlc2NyaXBjacOzbiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8Cnw6LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tOnw6LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS06fAp8ICAgICAgICAgICAgKipyZWNvcmQqKiAgICAgICAgICAgICB8ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBJRCBkZSBsYSBvYnNlcnZhY2nDs24gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8CnwgICAgICAgICAgICAgKiplZGFkKiogICAgICAgICAgICAgIHwgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBFZGFkIGVuIGHDsW9zICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwKfCAgICAgICAgICAgICoqZ2VuZXJvKiogICAgICAgICAgICAgfCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgZ8OpbmVybyBkZSBsYSBwZXJzb25hICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfAp8ICAgICAgICAqKm5pdmVsX2VkdWNhdGl2byoqICAgICAgICB8ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIG5pdmVsIGVkdWNhdGl2byBlbiBxdWUgc2UgZW5jdWVudHJhIGxhIHBlcnNvbmEgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwKfCAgICAgICAgICAgICoqYWx0dXJhKiogICAgICAgICAgICAgfCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgYWx0dXJhIGVuIGNlbnTDrW1ldHJvcyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfAp8ICAgICAgICAgICAgICoqcGVzbyoqICAgICAgICAgICAgICB8ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgcGVzbyBlbiBraWxvZ3JhbW9zICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwKfCAgICoqZnJlY3VlbmNpYV9oYW1icmVfbWVuc3VhbCoqICAgfCB2YXJpYWJsZSBjYXRlZ8OzcmljYSBxdWUgaW5kaWNhIGxhIGZyZWN1ZW5jaWEgY29uIGxhIHF1ZSBsYSBwZXJzb25hIGNvbnNpZGVyYSBxdWUgcGFzw7MgaGFtYnJlIGVuIGVsIMO6bHRpbW8gbWVzIHBvcnF1ZSBubyBoYWLDrWEgc3VmaWNpZW50ZSBjb21pZGEgZW4gc3UgaG9nYXIgfAp8ICAqKmRpYXNfY29uc3Vtb19jb21pZGFfcmFwaWRhKiogICB8ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgY3XDoW50b3MgZMOtYXMgY29tacOzIGVuIHVuIHJlc3RhdXJhbnRlIGRlIGNvbWlkYSByw6FwaWRhIGVuIGxhIMO6bHRpbWEgc2VtYW5hICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfAp8ICAgICAqKmVkYWRfY29uc3Vtb19hbGNvaG9sKiogICAgICB8ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgZWRhZCBlbiBxdcOpIGxhIHBlcnNvbmEgY29tZW56w7MgYSBjb25zdW1pciBhbGNvaG9sICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfAp8ICAgICoqY29uc3Vtb19kaWFyaW9fYWxjb2hvbCoqICAgICB8ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgY2FudGlkYWQgZGUgdHJhZ29zIHF1ZSBsYSBwZXJzb25hIGhhYml0dWFsbWVudGUgdG9tYSBwb3IgZMOtYSAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8CnwgKipkaWFzX2FjdGl2aWRhZF9maXNpY2Ffc2VtYW5hbCoqIHwgICAgICAgICAgICAgICAgICAgIGNhbnRpZGFkIGRlIGTDrWFzIHF1ZSBsYSBwZXJzb25hIHJlYWxpesOzIHVuYSBhY3RpdmlkYWQgZsOtc2ljYSBwb3IgdW4gdG90YWwgZGUgYWwgbWVub3MgNjAgbWludXRvcyBlbiBsYSDDumx0aW1hIHNlbWFuYSAgICAgICAgICAgICAgICAgICAgIHwKfCAgICAqKmNvbnN1bW9fc2VtYW5hbF9mcnV0YXMqKiAgICAgfCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgY2FudGlkYWQgZGUgdmVjZXMgcXVlIGxhIHBlcnNvbmEgY29uc3VtacOzIGZydXRhcyBlbiBsYSDDumx0aW1hIHNlbWFuYSAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwKfCAgICAqKmNvbnN1bW9fc2VtYW5hbF92ZXJkdXJhKiogICAgfCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBjYW50aWRhZCBkZSB2ZWNlcyBxdWUgbGEgcGVyc29uYSBjb25zdW1pw7MgZ2FzZW9zYXMgKGFsIG1lbm9zIHVuIHZhc28pIGVuIGxhIMO6bHRpbWEgc2VtYW5hICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwKfCAgICoqY29uc3Vtb19zZW1hbmFsX2dhc2Vvc2FzKiogICAgfCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBjYW50aWRhZCBkZSB2ZWNlcyBxdWUgbGEgcGVyc29uYSBjb25zdW1pw7Mgc25hY2tzL2NvbWlkYSBzYWxhZGEgZW4gbGEgw7psdGltYSBzZW1hbmEgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwKfCAgICAqKmNvbnN1bW9fc2VtYW5hbF9zbmFja3MqKiAgICAgfCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBjYW50aWRhZCBkZSB2ZWNlcyBxdWUgbGEgcGVyc29uYSBjb25zdW1pw7Mgc25hY2tzL2NvbWlkYSBzYWxhZGEgZW4gbGEgw7psdGltYSBzZW1hbmEgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwKfCAqKmNvbnN1bW9fc2VtYW5hbF9jb21pZGFfZ3Jhc2EqKiAgfCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGNhbnRpZGFkIGRlIHZlY2VzIHF1ZSBsYSBwZXJzb25hIGNvbnN1bWnDsyBjb21pZGFzIGFsdGFzIGVuIGdyYXNhcyBlbiBsYSDDumx0aW1hIHNlbWFuYSAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwKCiMjIyAqKkNvbnNpZ25hczoqKgoKRWwgb2JqZXRpdm8gZ2VuZXJhbCBkZWwgdHJhYmFqbyBlcyBwb2RlciBjcmVhciB1bmEgc2VyaWUgZGUgbW9kZWxvcyBsaW5lYWxlcyBwYXJhIGV4cGxpY2FyIHkgcHJlZGVjaXIgZWwgcGVzbyBkZSBsb3MgZXN0dWRpYW50ZXMgc2Vnw7puIGxhIGluZm9ybWFjacOzbiBxdWUgcHJvcG9yY2lvbmEgbGEgRU1TRS4KCi0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQoKIyMjIyMgKipTZSBjYXJnYW4gbGFzIGxpYnJlcsOtYXMgY29uIGxhcyBxdWUgc2UgdmEgYSByZWFsaXphciBlbCB0cmFiYWpvOioqCgpgYGB7cn0KcGxvdChjYXJzKQpgYGAKCiMjIyMjICoqSW1wb3J0byBlbCBkYXRhc2V0OioqCgpgYGB7cn0KcHJpbnQoJ2hvbGEnKQpgYGAK</div>
+<div id="rmd-source-code">LS0tCnRpdGxlOiAiRW5mb3F1ZSBlc3RhZMOtc3RpY28gZGVsIGFwcmVuZGl6YWplIgpvdXRwdXQ6IAogIGh0bWxfbm90ZWJvb2s6IAogICAgY29kZV9mb2xkaW5nOiBub25lCi0tLQoKIyBbKipUcmFiYWpvIHByw6FjdGljbyBuwroxOiByZWdyZXNpw7NuIGxpbmVhbCoqXXsudW5kZXJsaW5lfQoKwqAKCiMjIyAqKkRhdG9zIGEgdXRpbGl6YXI6KioKCkxvcyBkYXRvcyBjb24gbG9zIHF1ZSBzZSB0cmFiYWphcsOhIGVuIGVzdGUgVFAgcHJvdmllbmVuIGRlIGxhIDPCsCBFbmN1ZXN0YSBNdW5kaWFsIGRlIFNhbHVkIEVzY29sYXIgKEVNU0UpIHByb3Zpc3RvcyBwb3IgZWwgTWluaXN0ZXJpbyBkZSBTYWx1ZCBkZSBsYSBSZXDDumJsaWNhIEFyZ2VudGluYS4gRXN0YSBlbmN1ZXN0YSB0cmF0YSBzb2JyZSB0ZW1hcyBkZSBzYWx1ZCB5IGjDoWJpdG9zIGRlIGxhcyBwZXJzb25hcyBlbiBsYSBlc2N1ZWxhIHNlY3VuZGFyaWEgcXVlIHB1ZWRlbiBpbXBhY3RhciBlbiBzdSBzYWx1ZC4KCkxvcyBkYXRhc2V0cyBxdWUgc2UgY29tcGFydGVuIGNvcnJlc3BvbmRlbiBhIHVuIHJlY29ydGUgKG11ZXN0cmEpIGRlbCBkYXRhc2V0IG9yaWdpbmFsLCBsdWVnbyBkZWwgdHJhdGFtaWVudG8gZGUgdmFsb3JlcyBhdMOtcGljb3MgZSBpbmdlbmllcsOtYSBkZSBhdHJpYnV0b3MuCgpMYXMgKip2YXJpYWJsZXMqKiBpbmNsdWlkYXMgc29uOgoKfCAgICAgICAgICAgICBWYXJpYWJsZSAgICAgICAgICAgICAgfCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBEZXNjcmlwY2nDs24gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfAp8Oi0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLTp8Oi0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tOnwKfCAgICAgICAgICAgICoqcmVjb3JkKiogICAgICAgICAgICAgfCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgSUQgZGUgbGEgb2JzZXJ2YWNpw7NuICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfAp8ICAgICAgICAgICAgICoqZWRhZCoqICAgICAgICAgICAgICB8ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgRWRhZCBlbiBhw7FvcyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8CnwgICAgICAgICAgICAqKmdlbmVybyoqICAgICAgICAgICAgIHwgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGfDqW5lcm8gZGUgbGEgcGVyc29uYSAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwKfCAgICAgICAgKipuaXZlbF9lZHVjYXRpdm8qKiAgICAgICAgfCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBuaXZlbCBlZHVjYXRpdm8gZW4gcXVlIHNlIGVuY3VlbnRyYSBsYSBwZXJzb25hICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8CnwgICAgICAgICAgICAqKmFsdHVyYSoqICAgICAgICAgICAgIHwgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGFsdHVyYSBlbiBjZW50w61tZXRyb3MgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwKfCAgICAgICAgICAgICAqKnBlc28qKiAgICAgICAgICAgICAgfCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHBlc28gZW4ga2lsb2dyYW1vcyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8CnwgICAqKmZyZWN1ZW5jaWFfaGFtYnJlX21lbnN1YWwqKiAgIHwgdmFyaWFibGUgY2F0ZWfDs3JpY2EgcXVlIGluZGljYSBsYSBmcmVjdWVuY2lhIGNvbiBsYSBxdWUgbGEgcGVyc29uYSBjb25zaWRlcmEgcXVlIHBhc8OzIGhhbWJyZSBlbiBlbCDDumx0aW1vIG1lcyBwb3JxdWUgbm8gaGFiw61hIHN1ZmljaWVudGUgY29taWRhIGVuIHN1IGhvZ2FyIHwKfCAgKipkaWFzX2NvbnN1bW9fY29taWRhX3JhcGlkYSoqICAgfCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGN1w6FudG9zIGTDrWFzIGNvbWnDsyBlbiB1biByZXN0YXVyYW50ZSBkZSBjb21pZGEgcsOhcGlkYSBlbiBsYSDDumx0aW1hIHNlbWFuYSAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwKfCAgICAgKiplZGFkX2NvbnN1bW9fYWxjb2hvbCoqICAgICAgfCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGVkYWQgZW4gcXXDqSBsYSBwZXJzb25hIGNvbWVuesOzIGEgY29uc3VtaXIgYWxjb2hvbCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwKfCAgICAqKmNvbnN1bW9fZGlhcmlvX2FsY29ob2wqKiAgICAgfCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGNhbnRpZGFkIGRlIHRyYWdvcyBxdWUgbGEgcGVyc29uYSBoYWJpdHVhbG1lbnRlIHRvbWEgcG9yIGTDrWEgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfAp8ICoqZGlhc19hY3RpdmlkYWRfZmlzaWNhX3NlbWFuYWwqKiB8ICAgICAgICAgICAgICAgICAgICBjYW50aWRhZCBkZSBkw61hcyBxdWUgbGEgcGVyc29uYSByZWFsaXrDsyB1bmEgYWN0aXZpZGFkIGbDrXNpY2EgcG9yIHVuIHRvdGFsIGRlIGFsIG1lbm9zIDYwIG1pbnV0b3MgZW4gbGEgw7psdGltYSBzZW1hbmEgICAgICAgICAgICAgICAgICAgICB8CnwgICAgKipjb25zdW1vX3NlbWFuYWxfZnJ1dGFzKiogICAgIHwgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGNhbnRpZGFkIGRlIHZlY2VzIHF1ZSBsYSBwZXJzb25hIGNvbnN1bWnDsyBmcnV0YXMgZW4gbGEgw7psdGltYSBzZW1hbmEgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8CnwgICAgKipjb25zdW1vX3NlbWFuYWxfdmVyZHVyYSoqICAgIHwgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgY2FudGlkYWQgZGUgdmVjZXMgcXVlIGxhIHBlcnNvbmEgY29uc3VtacOzIGdhc2Vvc2FzIChhbCBtZW5vcyB1biB2YXNvKSBlbiBsYSDDumx0aW1hIHNlbWFuYSAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8CnwgICAqKmNvbnN1bW9fc2VtYW5hbF9nYXNlb3NhcyoqICAgIHwgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgY2FudGlkYWQgZGUgdmVjZXMgcXVlIGxhIHBlcnNvbmEgY29uc3VtacOzIHNuYWNrcy9jb21pZGEgc2FsYWRhIGVuIGxhIMO6bHRpbWEgc2VtYW5hICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8CnwgICAgKipjb25zdW1vX3NlbWFuYWxfc25hY2tzKiogICAgIHwgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgY2FudGlkYWQgZGUgdmVjZXMgcXVlIGxhIHBlcnNvbmEgY29uc3VtacOzIHNuYWNrcy9jb21pZGEgc2FsYWRhIGVuIGxhIMO6bHRpbWEgc2VtYW5hICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8CnwgKipjb25zdW1vX3NlbWFuYWxfY29taWRhX2dyYXNhKiogIHwgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBjYW50aWRhZCBkZSB2ZWNlcyBxdWUgbGEgcGVyc29uYSBjb25zdW1pw7MgY29taWRhcyBhbHRhcyBlbiBncmFzYXMgZW4gbGEgw7psdGltYSBzZW1hbmEgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8CgojIyMgKipDb25zaWduYXM6KioKCkVsIG9iamV0aXZvIGdlbmVyYWwgZGVsIHRyYWJham8gZXMgcG9kZXIgY3JlYXIgdW5hIHNlcmllIGRlIG1vZGVsb3MgbGluZWFsZXMgcGFyYSBleHBsaWNhciB5IHByZWRlY2lyIGVsIHBlc28gZGUgbG9zIGVzdHVkaWFudGVzIHNlZ8O6biBsYSBpbmZvcm1hY2nDs24gcXVlIHByb3BvcmNpb25hIGxhIEVNU0UuCgotLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0KCsKgU2UgY2FyZ2FuIGxhcyBsaWJyZXLDrWFzIGNvbiBsYXMgcXVlIHNlIHZhIGEgcmVhbGl6YXIgZWwgdHJhYmFqbzoKCmBgYHtyIGVjaG89VFJVRX0KbGlicmFyeSh0aWR5dmVyc2UpCmxpYnJhcnkoZ2dwbG90MikKbGlicmFyeShrbml0cikKYGBgCgrCoAoKSW1wb3J0byBlbCBkYXRhc2V0OgoKYGBge3J9CmVuY3Vlc3RhX3NhbHVkIDwtIHJlYWQuY3N2KCJlbmN1ZXN0YV9zYWx1ZF90cmFpbi5jc3YiKQpgYGAKClwKCiMjIyMgWyoqMSkgQW7DoWxpc2lzIGV4cGxvcmF0b3JpbyoqXXsudW5kZXJsaW5lfQoKXApQcmltZXJvLCBvYnNlcnZvIGFsZ3Vub3MgcmVnaXN0cm9zIGRlbCBkYXRhc2V0OgoKYGBge3IgZWNobz1UUlVFfQplbmN1ZXN0YV9zYWx1ZCAlPiUgc2FtcGxlX24oNSkKYGBgCgpPYnNlcnZvIGxhcyBkaW1lbnNpb25lcyBkZWwgZGF0YXNldDoKCmBgYHtyIGVjaG89VFJVRX0KZ2xpbXBzZShlbmN1ZXN0YV9zYWx1ZCkgJT4lIGthYmxlKCkKYGBgCgpBcXXDrSBzZSBwdWVkZSB2ZXIgcXVlIGVsIGRhdGFzZXQgY3VlbnRhIGNvbiA3MDI0IG9ic2VydmFjaW9uZXMgcGFyYSBsYXMgY3VhbGVzIHNlIHRpZW5lbiAxNiB2YXJpYWJsZXMgKDcgZGUgZWxsYXMgbnVtw6lyaWNhcyB5IDkgY2F0ZWfDs3JpY2FzKS4gTGEgdmFyaWFibGUgcGVzbywgcXVlIGVzIHVuYSBkZSBsYXMgdmFyaWFibGVzIG51bcOpcmljYXMsIGVzIGxhIHZhcmlhYmxlIGEgZXhwbGljYXIgY29uIGVsIHJlc3RvLgoKQSBjb250aW51YWNpw7NuLCBvYnNlcnZhbW9zIHNpIGxhcyB2YXJpYWJsZXMgbnVtw6lyaWNhcyAtIHkgZnVuZGFtZW50YWxtZW50ZSBlbCBwZXNvIC0gZXN0w6FuIGNvcnJlbGFjaW9uYWRhcyBvIG5vLiBBIHN1IHZleiwgc2UgcHJvY2VkZSBhIGFwZXJ0dXJhciBwb3IgZWwgZ8OpbmVybyBkZSBjYWRhIHVuYSBkZSBsYXMgcGVyc29uYXM6CgpgYGB7ciBlY2hvPVRSVUV9CgpgYGAKCkx1ZWdvLCB2ZW1vcyBxdWUgZXhpc3RlbiBYIGNhdGVnb3LDrWFzIGRlIGxhICJmcmVjdWVuY2lhIGRlIGhhbWJyZSBtZW5zdWFsIjogYSBiIHkgYwoKUGFyYSBjYWRhIHVuYSBkZSBlbGxhcywgb2JzZXJ2YW1vcyBjb21vIHNlIGRpc3RyaWJ1eWVuIGVsIGNvbnN1bW8gc2VtYW5hbCBkZSB2ZXJkdXJhIHkgZWwgY29uc3VtbyBzZW1hbmFsIGRlIGNvbWlkYSBncmFzYToKCmBgYHtyIGVjaG89VFJVRX0KCmBgYAoKRW4gZXN0b3MgZ3LDoWZpY29zLCBzZSBwdWVkZSBvYnNlcnZhciBxdWU6CgrCv0N1w6FsZXMgc29uIGxhcyBwcmluY2lwYWxlcyBjYXJhY3RlcsOtc3RpY2FzIHF1ZSBvYnNlcnZhIGVuIGVzdG9zIGdyw6FmaWNvcz8KCiMjIyMgWyoqMikgTW9kZWxvIGluaWNpYWwqKl17LnVuZGVybGluZX0KClNlIHBsYW50ZWEgcXVlIHVuYSBwcmltZXJhIGFsdGVybmF0aXZhIHBhcmEgbW9kZWxhciBlbCBwZXNvIGVzOgoKJCQKRShwZXNvKSA9IFxiZXRhX3swfSArIFxiZXRhX3sxfSBhbHR1cmErIFxiZXRhX3syfSBlZGFkKyBcYmV0YV97M30gZ2VuZXJvICsgXGJldGFfezR9IGRpYXNBY3RpdmlkYWRGIGlzaWNhU2VtYW5hbCArIFxiZXRhX3s1fSBjb25zdW1vRGlhcmlvQWxjb2hvbAokJAoKQWp1c3RvIGVsIG1vZGVsbyBsaW5lYWw6CgpgYGB7ciBlY2hvPVRSVUV9CmxtCnN1bW1hcnkKYGBgCgrCv0N1w6FsIGVzIGxhIGludGVycHJldGFjacOzbiBkZSBjYWRhIHVubyBkZSBsb3MgY29lZmljaWVudGVzIGVzdGltYWRvcz8gwr9Tb24gc2lnbmlmaWNhdGl2b3M/IMK/RWwgbW9kZWxvIHJlc3VsdGEgc2lnbmlmaWNhdGl2byBwYXJhIGV4cGxpY2FyIGVsIHBlc28/IMK/UXXDqSBwb3JjZW50YWplIGRlIGxhIHZhcmlhYmlsaWRhZCBleHBsaWNhIGVsIG1vZGVsbz8KCiMjIyMgMykgTW9kZWxvIGNhdGVnw7NyaWNhcwoKU2Ugc3VnaWVyZSBwcm9iYXIgdW4gbW9kZWxvIHF1ZSBpbmNvcG9yZSBlbCBjb25zdW1vIHNlbWFuYWwgZGUgc25hY2tzIHkgdW5hIGludGVyYWNjacOzbiBlbnRyZSBlbCBnw6luZXJvIHkgbGEgZWRhZCwgZW4gbHVnYXIgZGUgYWN0aXZpZGFkIGbDrXNpY2EgeSBjb25zdW1vIGRlIGFsY29ob2w6CgokJApFKHBlc28pID0gXGJldGFfezB9ICsgXGJldGFfezF9IGFsdHVyYSsgXGJldGFfezJ9IGVkYWQrIFxiZXRhX3szfSBnZW5lcm8gKyBcYmV0YV97NH0gY29uc3Vtb1NlbWFuYWxTbmFja3MgKyBcYmV0YV97NX0gZ2VuZXJvLmVkYWQKJCQKCkFkZW3DoXMgc2UgcGlkZSBleHBsw61jaXRhbWVudGUgcXVlIGxhIGNhdGVnb3LDrWEgIk5vIGNvbcOtIGNvbWlkYSBzYWxhZGEgbyBzbmFja3MgZW4gbG9zIMO6bHRpbW9zIDcgZMOtYXMiIGRlIGxhIHZhcmlhYmxlIGNvbnN1bW9TZW1hbmFsU25hY2tzIHNlIGVuY3VlbnRyZSBjb21vIG5pdmVsL2NhdGVnb3LDrWEgYmFzYWwuCgrCv0N1w6FsIGVzIGxhIGludGVycHJldGFjacOzbiBkZSBsb3MgY29lZmljaWVudGVzIGVzdGltYWRvcyBwYXJhIGxhcyBjYXRlZ29yw61hcyBkZSBjb25zdW1vU2VtYW5hbFNuYWNrcyB5IGdlbmVybyAuIGVkYWQ/IMK/U29uIHNpZ25pZmljYXRpdmFzPyDCv1F1w6kgcG9yY2VudGFqZSBkZSBsYSB2YXJpYWJpbGlkYWQgZXhwbGljYSBlbCBtb2RlbG8/CgpFbiBjYXNvIGRlIGRldGVjdGFyIHF1ZSBleGlzdGVuIGNhdGVnb3LDrWFzIG5vIHNpZ25pZmljYXRpdmFzIGRlIGxhIHZhcmlhYmxlIGNvbnN1bW9TZW1hbmFsU25hY2tzIGV2YWx1YXIgc2kgbGEgdmFyaWFibGUgZXMgc2lnbmlmaWNhdGl2YSBlbiBzdSBjb25qdW50byB5LCBlbiBjYXNvIGFmaXJtYXRpdm8sIHByb3BvbmVyIHVuYSByZWRlZmluaWNpw7NuIGRlIGxhcyBtaXNtYXMgcXVlIHBlcm1pdGEgb2J0ZW5lciB1bmEgbWF5b3IgcHJvcG9yY2nDs24gZGUgY2F0ZWdvcsOtYXMgc2lnbmlmaWNhdGl2YXMgaW5kaXZpZHVhbG1lbnRlLiBMdWVnbywgYW5hbGl6YXIgc2kgZXhpc3RlbiBjYW1iaW9zIGVuIGxhIHZhcmlhYmlsaWRhZCBleHBsaWNhZGEgcG9yIGVsIG1vZGVsby4KCiMjIyMgWyoqNCkgTW9kZWxvcyBwcm9waW9zIHkgZXZhbHVhY2nDs24qKl17LnVuZGVybGluZX0KClJlYWxpemFyIDIgbW9kZWxvcyBsaW5lYWxlcyBtw7psdGlwbGVzIGFkaWNpb25hbGVzIHkgZXhwbGljYXIgYnJldmVtZW50ZSBsYSBsw7NnaWNhIGRldHLDoXMgZGUgbG9zIG1pc21vcyAoc2UgdmFsb3JhcsOhIGxhIGNyZWFjacOzbiB5L28gaW5jbHVzacOzbiBkZSB2YXJpYWJsZXMgbnVldmFzKS4KCkV2YWx1YXIgbGEgcGVyZm9ybWFuY2UgZGVsIG1vZGVsbyBpbmljaWFsLCBlbCBtb2RlbG8gY2F0ZWfDs3JpY2FzIGNvbiBsYXMgY2F0ZWdvcsOtYXMgcmVkZWZpbmlkYXMgZGUgbGEgdmFyaWFibGUgY29uc3Vtb1NlbWFuYWxTbmFja3MgeSBsb3MgbW9kZWxvcyBkZXNhcnJvbGxhZG9zIGVuIGVzdGUgcHVudG8gZW4gZWwgZGF0YXNldCBkZSBlbnRyZW5hbWllbnRvIHkgZXZhbHVhY2nDs24gKHVzYXIgZGF0YXNldCAiZW5jdWVzdGFfc2FsdWRfdGVzdC5jc3YiKS4gTGEgZXZhbHVhY2nDs24gZGUgcGVyZm9ybWFuY2UgY29uc2lzdGUgZW4gY29tcGFyYQoKciBsYSBwZXJmb3JtYW5jZSBlbiB0w6lybWlub3MgZGVsIFIgY3VhZHJhZG8gYWp1c3RhZG8sIFJNU0UgeSBNQUUgc29icmUgZWwgc2V0IGRlIGVudHJlbmFtaWVudG8geSBlbiB0w6lybWlub3MgZGUgUk1TRSB5IE1BRSBzb2JyZSBlbCBzZXQgZGUgZXZhbHVhY2nDs24uCgrCv0N1w6FsIGVzIGVsIG1lam9yIG1vZGVsbyBwYXJhIG51ZXN0cm8gb2JqZXRpdm8gZGUgcHJlZGVjaXIgZWwgcGVzbz8gwr9Qb3IgcXXDqT8KCiMjIyMgWyoqNSkgRGlhZ27Ds3N0aWNvIGRlbCBtb2RlbG8qKl17LnVuZGVybGluZX0KCkFuYWxpemFyIGVuIHByb2Z1bmRpZGFkIGVsIGN1bXBsaW1pZW50byBkZSBsb3Mgc3VwdWVzdG9zIGRlbCBtb2RlbG8gbGluZWFsIHBhcmEgZWwgbW9kZWxvIGluaWNpYWwuCgojIyMjIFsqKjYpIE1vZGVsbyByb2J1c3RvKipdey51bmRlcmxpbmV9CgpMZWVyIGVsIGFyY2hpdm8gImVuY3Vlc3RhX3NhbHVkX21vZGVsbzYuY3N2Ii4gRXN0ZSDDumx0aW1vIGNvbnNpc3RlIGVuIGVsIGRhdGFzZXQgb3JpZ2luYWwgZGUgdHJhaW4gY29uIGxhCgppbmNvcnBvcmFjacOzbiBkZSBhbGd1bmFzIG9ic2VydmFjaW9uZXMgYWRpY2lvbmFsZXMgcXVlIHB1ZWRlbiBpbmNsdWlyIHZhbG9yZXMgYXTDrXBpY29zLiBFbiBwYXJ0aWN1bGFyLCBvYnNlcnZhcgoKbGEgcmVsYWNpw7NuIGVudHJlIHBlc28geSBhbHR1cmEgwr9RdcOpIG9jdXJyZSBjb24gZXN0b3MgbnVldm9zIGRhdG9zPwoKRW50cmVuYXIgZWwgbW9kZWxvIGluaWNpYWwgY29uIGVzdG9zIG51ZXZvcyBkYXRvcyB5IGNvbWVudGFyIHF1w6kgc2Ugb2JzZXJ2YSBlbiBsb3MgY29lZmljaWVudGVzIGVzdGltYWRvcyB5CgpsYXMgbcOpdHJpY2FzIGRlIGV2YWx1YWNpw7NuIChSIGN1YWRyYWRvIGFqdXN0YWRvLCBSTVNFIHkgTUFFKSByZXNwZWN0byBhbCBtb2RlbG8gZW50cmVuYWRvIGNvbiBlbCBzZXQgZGUKCmVudHJlbmFtaWVudG8gb3JpZ2luYWwuCgpFbnRyZW5hciB1biBtb2RlbG8gcm9idXN0byBjb24gbGEgbWlzbWEgZXNwZWNpZmljYWNpw7NuIHF1ZSBlbCBtb2RlbG8gaW5pY2lhbCBzb2JyZSBsb3MgbnVldm9zIGRhdG9zLgoKQ29tcGFyYXIgbG9zIGNvZWZpY2llbnRlcyB5IHN1IHBlcmZvcm1hbmNlIChSTVNFIHkgTUFFKSByZXNwZWN0byBhbCBtb2RlbG8gaW5pY2lhbCBubyByb2J1c3RvIGVudHJlbmFkbwoKZW4gZXN0ZSBwdW50by4gwr9RdcOpIHB1ZWRlIGNvbmNsdWlyIGFsIHJlc3BlY3RvPwoKTm90YTogbG9zIHJlZ2lzdHJvcyBxdWUgc2Ugc3VtYW4gZW4gZXN0ZSBwdW50byBzb24gb2JzZXJ2YWNpb25lcyBmaWN0aWNpYXMgcXVlIHNlIGdlbmVyYXJvbiBhIHBhcnRpciBkZQoKb2JzZXJ2YWNpb25lcyByZWFsZXMgZGVsIHNldCBkZSBkYXRvcyBvcmlnaW5hbC4K</div>
 
 
 
@@ -1948,7 +2102,6 @@ $(document).ready(function () {
 <script>
 $(document).ready(function () {
   window.initializeSourceEmbed("eea2022_tp1_trevisani_hernanlucas.Rmd");
-  window.initializeCodeFolding("show" === "show");
 });
 </script>
 

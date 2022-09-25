@@ -1,20 +1,24 @@
 ---
 title: "Enfoque estadístico del aprendizaje"
-output: html_notebook
+output: 
+  html_notebook: 
+    code_folding: none
 ---
 
 # [**Trabajo práctico nº1: regresión lineal**]{.underline}
 
+ 
+
 ### **Datos a utilizar:**
 
-Los datos con los que se trabajará en este TP provienen de la 3° Encuesta Mundial de Salud Escolar (EMSE) provistos por el Ministerio de Salud (link) de la República Argentina. Esta encuesta trata sobre temas de salud y hábitos de las personas en la escuela secundaria que pueden impactar en su salud.
+Los datos con los que se trabajará en este TP provienen de la 3° Encuesta Mundial de Salud Escolar (EMSE) provistos por el Ministerio de Salud de la República Argentina. Esta encuesta trata sobre temas de salud y hábitos de las personas en la escuela secundaria que pueden impactar en su salud.
 
 Los datasets que se comparten corresponden a un recorte (muestra) del dataset original, luego del tratamiento de valores atípicos e ingeniería de atributos.
 
 Las **variables** incluidas son:
 
 |             Variable              |                                                                         Descripción                                                                         |
-|:---------------------------:|:-----------------------------------------:|
+|:---------------------------------:|:-----------------------------------------------------------------------------------------------------------------------------------------------------------:|
 |            **record**             |                                                                    ID de la observación                                                                     |
 |             **edad**              |                                                                        Edad en años                                                                         |
 |            **genero**             |                                                                    género de la persona                                                                     |
@@ -38,14 +42,124 @@ El objetivo general del trabajo es poder crear una serie de modelos lineales par
 
 ------------------------------------------------------------------------
 
-##### **Se cargan las librerías con las que se va a realizar el trabajo:**
+ Se cargan las librerías con las que se va a realizar el trabajo:
 
-```{r}
-plot(cars)
+```{r echo=TRUE}
+library(tidyverse)
+library(ggplot2)
+library(knitr)
 ```
 
-##### **Importo el dataset:**
+ 
+
+Importo el dataset:
 
 ```{r}
-print('hola')
+encuesta_salud <- read.csv("encuesta_salud_train.csv")
 ```
+
+\
+
+#### [**1) Análisis exploratorio**]{.underline}
+
+\
+Primero, observo algunos registros del dataset:
+
+```{r echo=TRUE}
+encuesta_salud %>% sample_n(5)
+```
+
+Observo las dimensiones del dataset:
+
+```{r echo=TRUE}
+glimpse(encuesta_salud) %>% kable()
+```
+
+Aquí se puede ver que el dataset cuenta con 7024 observaciones para las cuales se tienen 16 variables (7 de ellas numéricas y 9 categóricas). La variable peso, que es una de las variables numéricas, es la variable a explicar con el resto.
+
+A continuación, observamos si las variables numéricas - y fundamentalmente el peso - están correlacionadas o no. A su vez, se procede a aperturar por el género de cada una de las personas:
+
+```{r echo=TRUE}
+
+```
+
+Luego, vemos que existen X categorías de la "frecuencia de hambre mensual": a b y c
+
+Para cada una de ellas, observamos como se distribuyen el consumo semanal de verdura y el consumo semanal de comida grasa:
+
+```{r echo=TRUE}
+
+```
+
+En estos gráficos, se puede observar que:
+
+¿Cuáles son las principales características que observa en estos gráficos?
+
+#### [**2) Modelo inicial**]{.underline}
+
+Se plantea que una primera alternativa para modelar el peso es:
+
+$$
+E(peso) = \beta_{0} + \beta_{1} altura+ \beta_{2} edad+ \beta_{3} genero + \beta_{4} diasActividadF isicaSemanal + \beta_{5} consumoDiarioAlcohol
+$$
+
+Ajusto el modelo lineal:
+
+```{r echo=TRUE}
+lm
+summary
+```
+
+¿Cuál es la interpretación de cada uno de los coeficientes estimados? ¿Son significativos? ¿El modelo resulta significativo para explicar el peso? ¿Qué porcentaje de la variabilidad explica el modelo?
+
+#### 3) Modelo categóricas
+
+Se sugiere probar un modelo que incopore el consumo semanal de snacks y una interacción entre el género y la edad, en lugar de actividad física y consumo de alcohol:
+
+$$
+E(peso) = \beta_{0} + \beta_{1} altura+ \beta_{2} edad+ \beta_{3} genero + \beta_{4} consumoSemanalSnacks + \beta_{5} genero.edad
+$$
+
+Además se pide explícitamente que la categoría "No comí comida salada o snacks en los últimos 7 días" de la variable consumoSemanalSnacks se encuentre como nivel/categoría basal.
+
+¿Cuál es la interpretación de los coeficientes estimados para las categorías de consumoSemanalSnacks y genero . edad? ¿Son significativas? ¿Qué porcentaje de la variabilidad explica el modelo?
+
+En caso de detectar que existen categorías no significativas de la variable consumoSemanalSnacks evaluar si la variable es significativa en su conjunto y, en caso afirmativo, proponer una redefinición de las mismas que permita obtener una mayor proporción de categorías significativas individualmente. Luego, analizar si existen cambios en la variabilidad explicada por el modelo.
+
+#### [**4) Modelos propios y evaluación**]{.underline}
+
+Realizar 2 modelos lineales múltiples adicionales y explicar brevemente la lógica detrás de los mismos (se valorará la creación y/o inclusión de variables nuevas).
+
+Evaluar la performance del modelo inicial, el modelo categóricas con las categorías redefinidas de la variable consumoSemanalSnacks y los modelos desarrollados en este punto en el dataset de entrenamiento y evaluación (usar dataset "encuesta_salud_test.csv"). La evaluación de performance consiste en compara
+
+r la performance en términos del R cuadrado ajustado, RMSE y MAE sobre el set de entrenamiento y en términos de RMSE y MAE sobre el set de evaluación.
+
+¿Cuál es el mejor modelo para nuestro objetivo de predecir el peso? ¿Por qué?
+
+#### [**5) Diagnóstico del modelo**]{.underline}
+
+Analizar en profundidad el cumplimiento de los supuestos del modelo lineal para el modelo inicial.
+
+#### [**6) Modelo robusto**]{.underline}
+
+Leer el archivo "encuesta_salud_modelo6.csv". Este último consiste en el dataset original de train con la
+
+incorporación de algunas observaciones adicionales que pueden incluir valores atípicos. En particular, observar
+
+la relación entre peso y altura ¿Qué ocurre con estos nuevos datos?
+
+Entrenar el modelo inicial con estos nuevos datos y comentar qué se observa en los coeficientes estimados y
+
+las métricas de evaluación (R cuadrado ajustado, RMSE y MAE) respecto al modelo entrenado con el set de
+
+entrenamiento original.
+
+Entrenar un modelo robusto con la misma especificación que el modelo inicial sobre los nuevos datos.
+
+Comparar los coeficientes y su performance (RMSE y MAE) respecto al modelo inicial no robusto entrenado
+
+en este punto. ¿Qué puede concluir al respecto?
+
+Nota: los registros que se suman en este punto son observaciones ficticias que se generaron a partir de
+
+observaciones reales del set de datos original.
