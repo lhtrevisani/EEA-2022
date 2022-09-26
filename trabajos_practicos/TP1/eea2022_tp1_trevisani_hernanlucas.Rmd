@@ -18,7 +18,7 @@ Los datasets que se comparten corresponden a un recorte (muestra) del dataset or
 Las **variables** incluidas son:
 
 |             Variable              |                                                                         Descripción                                                                         |
-|:---------------------------------:|:-----------------------------------------------------------------------------------------------------------------------------------------------------------:|
+|:-----------------:|:---------------------------------------------------:|
 |            **record**             |                                                                    ID de la observación                                                                     |
 |             **edad**              |                                                                        Edad en años                                                                         |
 |            **genero**             |                                                                    género de la persona                                                                     |
@@ -46,8 +46,13 @@ El objetivo general del trabajo es poder crear una serie de modelos lineales par
 
 ```{r echo=TRUE}
 library(tidyverse)
+library(tidymodels)
 library(ggplot2)
 library(knitr)
+library(GGally)
+
+options(scipen=999)
+
 ```
 
  
@@ -72,32 +77,77 @@ encuesta_salud %>% sample_n(5)
 Observo las dimensiones del dataset:
 
 ```{r echo=TRUE}
-glimpse(encuesta_salud) %>% kable()
+glimpse(encuesta_salud)
 ```
 
 Aquí se puede ver que el dataset cuenta con 7024 observaciones para las cuales se tienen 16 variables (7 de ellas numéricas y 9 categóricas). La variable peso, que es una de las variables numéricas, es la variable a explicar con el resto.
 
-A continuación, observamos si las variables numéricas - y fundamentalmente el peso - están correlacionadas o no. A su vez, se procede a aperturar por el género de cada una de las personas:
+A continuación, observamos si las variables numéricas - y fundamentalmente el peso - están correlacionadas o no. Para ello, se procede a aperturar por el género de cada una de las personas:
 
 ```{r echo=TRUE}
 
+encuesta_salud %>%
+  select(where(is.numeric), genero, -record) %>%
+  ggpairs(mapping = aes(color = genero), title = "Matriz de correlaciones",
+          upper = list(continuous = wrap("cor", size = 3, hjust=0.5)), legend = 25) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle=45, vjust=0.5), legend.position = "bottom")
 ```
 
-Luego, vemos que existen X categorías de la "frecuencia de hambre mensual": a b y c
-
-Para cada una de ellas, observamos como se distribuyen el consumo semanal de verdura y el consumo semanal de comida grasa:
+Observando los gráficos, s eobserva que existe cierta correlación entre entre el peso y la altura (x,5 para las personas de género masculino, x.8 para las de género femenino.
 
 ```{r echo=TRUE}
+encuesta_salud %>% 
+  group_by(genero) %>% 
+  summarise(cor = cor(altura, peso))
 
 ```
 
-En estos gráficos, se puede observar que:
+Luego, observamos qué categorías existen para la "frecuencia de hambre mensual":
 
-¿Cuáles son las principales características que observa en estos gráficos?
+```{r echo=TRUE}
+encuesta_salud %>%
+  select(frecuencia_hambre_mensual) %>%
+  table() %>%
+  prop.table() %>%
+  sort(decreasing = TRUE)
+```
+
+Para cada una de ellas, observamos cómo se distribuyen el consumo semanal de verdura y el consumo semanal de comida grasa:
+
+```{r echo=TRUE}
+tabla = encuesta_salud %>%
+  filter(frecuencia_hambre_mensual != 'Dato perdido') %>%
+  filter(consumo_semanal_verdura != 'Dato perdido') %>%
+  select(consumo_semanal_verdura, frecuencia_hambre_mensual) %>%
+  table()
+tabla = as.data.frame(tabla)
+colnames(tabla) <- c("consumo_semanal_verdura", "frecuencia_hambre_mensual", "q")
+
+order = c("Nunca", "Rara vez", "Algunas veces", "Casi siempre", "Siempre")
+type = c("4 o más veces al día", "3 veces al día", "2 veces al día", "1 vez al día", "4 a 6 veces durante los últimos 7 días", "1 a 3 veces durante los últimos 7 días", "No comí verduras ni hortalizas durante los últimos 7 días")
+```
+
+```{r}
+ggplot(tabla) +
+ aes(x = frecuencia_hambre_mensual, 
+     fill = factor(str_wrap(consumo_semanal_verdura, 20), levels = str_wrap(type, 20)),
+     weight = q) +
+ geom_bar(position = "fill") +
+ scale_fill_hue(direction = 1) +
+ coord_flip() +
+ theme_minimal() +
+ theme(legend.position = "bottom") + 
+ theme(legend.title=element_blank()) + 
+ labs(x = "Frecuencia de hambre",  y = "Consumo de verdura (proporción)", title = "Consumo de verduras y cantidad de veces con hambre en el mes") + 
+ scale_x_discrete(limits = order)
+```
+
+En estos gráficos, se puede observar que aquellos que suelen pasar hambre registran un menor consumo de verduras y hortalizas.
 
 #### [**2) Modelo inicial**]{.underline}
 
-Se plantea que una primera alternativa para modelar el peso es:
+La primera alternativa para modelar el peso, es la siguiente:
 
 $$
 E(peso) = \beta_{0} + \beta_{1} altura+ \beta_{2} edad+ \beta_{3} genero + \beta_{4} diasActividadF isicaSemanal + \beta_{5} consumoDiarioAlcohol
@@ -106,33 +156,78 @@ $$
 Ajusto el modelo lineal:
 
 ```{r echo=TRUE}
-lm
-summary
+modelo_simple = lm(peso ~ altura + edad + genero + dias_actividad_fisica_semanal + consumo_diario_alcohol, data=encuesta_salud)
+
+tidy_modelo_simple <- tidy(modelo_simple, conf.int = TRUE)
+tidy_modelo_simple
 ```
 
-¿Cuál es la interpretación de cada uno de los coeficientes estimados? ¿Son significativos? ¿El modelo resulta significativo para explicar el peso? ¿Qué porcentaje de la variabilidad explica el modelo?
+El valor de $\beta_{0}$ nos indica que el peso esperado para una mujer de 0 cm de altura, 0 años, que no realiza actividad física y que no consume alcohol es de -68.92 kg.
+
+El coeficiente que multiplica a la altura $\beta_{1}$ es 0.65. Significa que ante cada cm adicional de altura el peso promedio aumenta en 0,65 kg manteniendo todas las otras variables constantes
+
+El coeficiente que multiplica a generoMasculino es 1.26, de lo que se deduce que el peso esperado para una persona recién nacida de género masculino de 0 cm de altura, que no realiza actividad física ni consume alcohol es de -67,65 (-68.92 + 1.2626).
+
+El valor de $\beta_{4}$ nos muestra que ante cada día de actividad física adicional el peso promedio disminuye en 0,08kg (manteniendo todas las otras variables constantes).
+
+El valor de $\beta_{5}$ nos indica que ante cada trago diario adicional de alcohol el peso esperado de una persona aumenta en 0,007kg (manteniendo todas las otras variables constantes).
+
+Sin embargo, no todas las variables son significativas. Tras realizar el test de significatividad individual para los días de actividad física semanal y para el consumo diario de alcohol se observan p-valores mayores a 0.05 por lo que no se rechaza la hipótesis nula ($\beta_{k}=0$). También se puede ver que los intervalos de confianza para ambos coeficientes contienen el 0, lo que nos da la pauta de que no son variables útiles para explicar el peso de una persona.
+
+Por otro lado, el resto de las variables (altura, edad y género) sí resultan estadísticamente significativas para explicar el peso de una persona.
+
+```{r}
+glance(modelo_simple)
+```
+
+El $R^{2}$ del modelo, el porcentaje de variabilidad del fenómeno que el modelo logra explicar, es de 0,35. Considerando el p-valor, se rechaza la hipótesis nula del test de significatividad global y podemos concluir que al menos una de las variables regresoras sirve para explicar el peso de una persona.
 
 #### 3) Modelo categóricas
 
-Se sugiere probar un modelo que incopore el consumo semanal de snacks y una interacción entre el género y la edad, en lugar de actividad física y consumo de alcohol:
+Luego, se probará con un modelo que incopore el consumo semanal de snacks y una interacción entre el género y la edad, en lugar de actividad física y consumo de alcohol:
 
 $$
 E(peso) = \beta_{0} + \beta_{1} altura+ \beta_{2} edad+ \beta_{3} genero + \beta_{4} consumoSemanalSnacks + \beta_{5} genero.edad
 $$
 
-Además se pide explícitamente que la categoría "No comí comida salada o snacks en los últimos 7 días" de la variable consumoSemanalSnacks se encuentre como nivel/categoría basal.
+Se harán algunas modificaciones para que el nivel basal del consumo semanal de snacks sea "no comí comida salada o snacks en los últimos 7 días:
+
+```{r echo=TRUE}
+
+encuesta_salud$consumo_semanal_snacks <- relevel(as.factor(encuesta_salud$consumo_semanal_snacks), ref = "No comí comida salada o snacks en los últimos 7 días")
+
+modelo_categoricas = lm(peso ~ altura + edad + genero + consumo_semanal_snacks + genero * edad, data=encuesta_salud)
+
+tidy_modelo_modelo_categoricas <- tidy(modelo_categoricas, conf.int = TRUE)
+tidy_modelo_categóricas
+
+```
+
+INTERPRETACION COEFICIENTES (individial, conjunta e interacción)
 
 ¿Cuál es la interpretación de los coeficientes estimados para las categorías de consumoSemanalSnacks y genero . edad? ¿Son significativas? ¿Qué porcentaje de la variabilidad explica el modelo?
 
-En caso de detectar que existen categorías no significativas de la variable consumoSemanalSnacks evaluar si la variable es significativa en su conjunto y, en caso afirmativo, proponer una redefinición de las mismas que permita obtener una mayor proporción de categorías significativas individualmente. Luego, analizar si existen cambios en la variabilidad explicada por el modelo.
+CONJUNTA
+
+```{r}
+tidy(anova(modelo_simple))
+```
+
+En caso de detectar que existen categorías no significativas de la variable consumoSemanalSnacks evaluar si la variable es significativa en su conjunto y, en caso afirmativo, proponer una redefinición de las mismas que permita obtener una mayor proporción de categorías significativas individualmente.
+
+Luego, analizar si existen cambios en la variabilidad explicada por el modelo.
 
 #### [**4) Modelos propios y evaluación**]{.underline}
 
+A continuación, se sugieren dos posibles modelos adicionales para intentar explicar el peso de una persona:
+
+A:
+
+B:
+
 Realizar 2 modelos lineales múltiples adicionales y explicar brevemente la lógica detrás de los mismos (se valorará la creación y/o inclusión de variables nuevas).
 
-Evaluar la performance del modelo inicial, el modelo categóricas con las categorías redefinidas de la variable consumoSemanalSnacks y los modelos desarrollados en este punto en el dataset de entrenamiento y evaluación (usar dataset "encuesta_salud_test.csv"). La evaluación de performance consiste en compara
-
-r la performance en términos del R cuadrado ajustado, RMSE y MAE sobre el set de entrenamiento y en términos de RMSE y MAE sobre el set de evaluación.
+Evaluar la performance del modelo inicial, el modelo categóricas con las categorías redefinidas de la variable consumoSemanalSnacks y los modelos desarrollados en este punto en el dataset de entrenamiento y evaluación (usar dataset "encuesta_salud_test.csv"). La evaluación de performance consiste en comparar la performance en términos del R cuadrado ajustado, RMSE y MAE sobre el set de entrenamiento y en términos de RMSE y MAE sobre el set de evaluación.
 
 ¿Cuál es el mejor modelo para nuestro objetivo de predecir el peso? ¿Por qué?
 
@@ -140,26 +235,12 @@ r la performance en términos del R cuadrado ajustado, RMSE y MAE sobre el set d
 
 Analizar en profundidad el cumplimiento de los supuestos del modelo lineal para el modelo inicial.
 
+```{r}
+plot(modelo_simple)
+```
+
 #### [**6) Modelo robusto**]{.underline}
 
-Leer el archivo "encuesta_salud_modelo6.csv". Este último consiste en el dataset original de train con la
+Leer el archivo "encuesta_salud_modelo6.csv". Este último consiste en el dataset original de train con la incorporación de algunas observaciones adicionales que pueden incluir valores atípicos. En particular, observar la relación entre peso y altura ¿Qué ocurre con estos nuevos datos?
 
-incorporación de algunas observaciones adicionales que pueden incluir valores atípicos. En particular, observar
-
-la relación entre peso y altura ¿Qué ocurre con estos nuevos datos?
-
-Entrenar el modelo inicial con estos nuevos datos y comentar qué se observa en los coeficientes estimados y
-
-las métricas de evaluación (R cuadrado ajustado, RMSE y MAE) respecto al modelo entrenado con el set de
-
-entrenamiento original.
-
-Entrenar un modelo robusto con la misma especificación que el modelo inicial sobre los nuevos datos.
-
-Comparar los coeficientes y su performance (RMSE y MAE) respecto al modelo inicial no robusto entrenado
-
-en este punto. ¿Qué puede concluir al respecto?
-
-Nota: los registros que se suman en este punto son observaciones ficticias que se generaron a partir de
-
-observaciones reales del set de datos original.
+Entrenar el modelo inicial con estos nuevos datos y comentar qué se observa en los coeficientes estimados y las métricas de evaluación (R cuadrado ajustado, RMSE y MAE) respecto al modelo entrenado con el set de entrenamiento original. Entrenar un modelo robusto con la misma especificación que el modelo inicial sobre los nuevos datos. Comparar los coeficientes y su performance (RMSE y MAE) respecto al modelo inicial no robusto entrenado en este punto. ¿Qué puede concluir al respecto? Nota: los registros que se suman en este punto son observaciones ficticias que se generaron a partir de observaciones reales del set de datos original.
