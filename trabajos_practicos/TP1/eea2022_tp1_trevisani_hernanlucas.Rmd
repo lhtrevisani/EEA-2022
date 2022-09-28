@@ -18,7 +18,7 @@ Los datasets que se comparten corresponden a un recorte (muestra) del dataset or
 Las **variables** incluidas son:
 
 |             Variable              |                                                                         Descripción                                                                         |
-|:-----------------:|:---------------------------------------------------:|
+|:------------------:|:--------------------------------------------------:|
 |            **record**             |                                                                    ID de la observación                                                                     |
 |             **edad**              |                                                                        Edad en años                                                                         |
 |            **genero**             |                                                                    género de la persona                                                                     |
@@ -84,7 +84,7 @@ Aquí se puede ver que el dataset cuenta con 7024 observaciones para las cuales 
 
 A continuación, observamos si las variables numéricas - y fundamentalmente el peso - están correlacionadas o no. Para ello, se procede a aperturar por el género de cada una de las personas:
 
-```{r echo=TRUE}
+```{r echo=TRUE, fig.width = 12, fig.height = 12}
 
 encuesta_salud %>%
   select(where(is.numeric), genero, -record) %>%
@@ -115,7 +115,7 @@ encuesta_salud %>%
 
 Para cada una de ellas, observamos cómo se distribuyen el consumo semanal de verdura y el consumo semanal de comida grasa:
 
-```{r echo=TRUE}
+```{r}
 tabla = encuesta_salud %>%
   filter(frecuencia_hambre_mensual != 'Dato perdido') %>%
   filter(consumo_semanal_verdura != 'Dato perdido') %>%
@@ -128,7 +128,7 @@ order = c("Nunca", "Rara vez", "Algunas veces", "Casi siempre", "Siempre")
 type = c("4 o más veces al día", "3 veces al día", "2 veces al día", "1 vez al día", "4 a 6 veces durante los últimos 7 días", "1 a 3 veces durante los últimos 7 días", "No comí verduras ni hortalizas durante los últimos 7 días")
 ```
 
-```{r}
+```{r echo=TRUE, fig.width = 10}
 ggplot(tabla) +
  aes(x = frecuencia_hambre_mensual, 
      fill = factor(str_wrap(consumo_semanal_verdura, 20), levels = str_wrap(type, 20)),
@@ -182,7 +182,7 @@ glance(modelo_simple)
 
 El $R^{2}$ del modelo, el porcentaje de variabilidad del fenómeno que el modelo logra explicar, es de 0,35. Considerando el p-valor, se rechaza la hipótesis nula del test de significatividad global y podemos concluir que al menos una de las variables regresoras sirve para explicar el peso de una persona.
 
-#### 3) Modelo categóricas
+#### [**3) Modelo categóricas**]{.underline}
 
 Luego, se probará con un modelo que incopore el consumo semanal de snacks y una interacción entre el género y la edad, en lugar de actividad física y consumo de alcohol:
 
@@ -198,8 +198,8 @@ encuesta_salud$consumo_semanal_snacks <- relevel(as.factor(encuesta_salud$consum
 
 modelo_categoricas = lm(peso ~ altura + edad + genero + consumo_semanal_snacks + genero * edad, data=encuesta_salud)
 
-tidy_modelo_modelo_categoricas <- tidy(modelo_categoricas, conf.int = TRUE)
-tidy_modelo_categóricas
+tidy_modelo_categoricas <- tidy(modelo_categoricas, conf.int = TRUE)
+tidy_modelo_categoricas
 
 ```
 
@@ -215,15 +215,23 @@ tidy(anova(modelo_simple))
 
 En caso de detectar que existen categorías no significativas de la variable consumoSemanalSnacks evaluar si la variable es significativa en su conjunto y, en caso afirmativo, proponer una redefinición de las mismas que permita obtener una mayor proporción de categorías significativas individualmente.
 
+Considerando que las categorías de la consumoSemanalSnacks no significativas hacen referencia al consumo de verduras más de una vez por día, se va a consolidar en una única y se van a volver a estimar los coeficientes.
+
 Luego, analizar si existen cambios en la variabilidad explicada por el modelo.
 
 #### [**4) Modelos propios y evaluación**]{.underline}
 
 A continuación, se sugieren dos posibles modelos adicionales para intentar explicar el peso de una persona:
 
-A:
+A: $$
+E(peso) = \beta_{0} + \beta_{1} altura+ \beta_{2} edad+ \beta_{3} genero + \beta_{4} consumoSemanalSnacks + \beta_{5} genero.edad
+$$
 
 B:
+
+$$
+E(peso) = \beta_{0} + \beta_{1} altura+ \beta_{2} edad+ \beta_{3} genero + \beta_{4} consumoSemanalSnacks + \beta_{5} genero.edad
+$$
 
 Realizar 2 modelos lineales múltiples adicionales y explicar brevemente la lógica detrás de los mismos (se valorará la creación y/o inclusión de variables nuevas).
 
