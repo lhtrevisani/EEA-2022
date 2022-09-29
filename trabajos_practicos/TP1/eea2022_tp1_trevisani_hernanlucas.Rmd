@@ -1,8 +1,6 @@
 ---
 title: "Enfoque estadístico del aprendizaje"
-output: 
-  html_notebook: 
-    code_folding: none
+output: html_notebook
 ---
 
 # [**Trabajo práctico nº1: regresión lineal**]{.underline}
@@ -18,7 +16,7 @@ Los datasets que se comparten corresponden a un recorte (muestra) del dataset or
 Las **variables** incluidas son:
 
 |             Variable              |                                                                         Descripción                                                                         |
-|:------------------:|:--------------------------------------------------:|
+|:--------------------:|:-----------------------------------------------:|
 |            **record**             |                                                                    ID de la observación                                                                     |
 |             **edad**              |                                                                        Edad en años                                                                         |
 |            **genero**             |                                                                    género de la persona                                                                     |
@@ -44,7 +42,11 @@ El objetivo general del trabajo es poder crear una serie de modelos lineales par
 
  Se cargan las librerías con las que se va a realizar el trabajo:
 
-```{r echo=TRUE}
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
 library(tidyverse)
 library(tidymodels)
 library(ggplot2)
@@ -74,6 +76,7 @@ Primero, observo algunos registros del dataset:
 encuesta_salud %>% sample_n(5)
 ```
 
+\
 Observo las dimensiones del dataset:
 
 ```{r echo=TRUE}
@@ -84,25 +87,24 @@ Aquí se puede ver que el dataset cuenta con 7024 observaciones para las cuales 
 
 A continuación, observamos si las variables numéricas - y fundamentalmente el peso - están correlacionadas o no. Para ello, se procede a aperturar por el género de cada una de las personas:
 
-```{r echo=TRUE, fig.width = 12, fig.height = 12}
-
+```{r echo=TRUE, fig.width = 12, fig.height = 8}
 encuesta_salud %>%
   select(where(is.numeric), genero, -record) %>%
   ggpairs(mapping = aes(color = genero), title = "Matriz de correlaciones",
-          upper = list(continuous = wrap("cor", size = 3, hjust=0.5)), legend = 25) +
+          upper = list(continuous = wrap("cor", size = 5, hjust=0.5)), legend = 25) +
   theme_bw() +
   theme(axis.text.x = element_text(angle=45, vjust=0.5), legend.position = "bottom")
+
 ```
 
-Observando los gráficos, s eobserva que existe cierta correlación entre entre el peso y la altura (x,5 para las personas de género masculino, x.8 para las de género femenino.
+En los gráficos, se observa que existe cierta correlación entre entre el peso y la altura (0,57 para las personas de género masculino, 0,44 para las de género femenino. También hay una correlación moderada entre la edad y el peso.
 
 ```{r echo=TRUE}
 encuesta_salud %>% 
   group_by(genero) %>% 
   summarise(cor = cor(altura, peso))
-
 ```
-
+\
 Luego, observamos qué categorías existen para la "frecuencia de hambre mensual":
 
 ```{r echo=TRUE}
@@ -113,9 +115,10 @@ encuesta_salud %>%
   sort(decreasing = TRUE)
 ```
 
+\
 Para cada una de ellas, observamos cómo se distribuyen el consumo semanal de verdura y el consumo semanal de comida grasa:
 
-```{r}
+```{r echo=TRUE, height = 6, fig.align='center'}
 tabla = encuesta_salud %>%
   filter(frecuencia_hambre_mensual != 'Dato perdido') %>%
   filter(consumo_semanal_verdura != 'Dato perdido') %>%
@@ -126,9 +129,8 @@ colnames(tabla) <- c("consumo_semanal_verdura", "frecuencia_hambre_mensual", "q"
 
 order = c("Nunca", "Rara vez", "Algunas veces", "Casi siempre", "Siempre")
 type = c("4 o más veces al día", "3 veces al día", "2 veces al día", "1 vez al día", "4 a 6 veces durante los últimos 7 días", "1 a 3 veces durante los últimos 7 días", "No comí verduras ni hortalizas durante los últimos 7 días")
-```
 
-```{r echo=TRUE, fig.width = 10}
+
 ggplot(tabla) +
  aes(x = frecuencia_hambre_mensual, 
      fill = factor(str_wrap(consumo_semanal_verdura, 20), levels = str_wrap(type, 20)),
@@ -143,7 +145,9 @@ ggplot(tabla) +
  scale_x_discrete(limits = order)
 ```
 
-En estos gráficos, se puede observar que aquellos que suelen pasar hambre registran un menor consumo de verduras y hortalizas.
+En estos gráficos, se puede observar que aquellos que suelen pasar hambre (siempre o casi siempre) registran un menor consumo de verduras y hortalizas. En los primeros también hay un alto porcentaje de peresonas que comen verduras y/o hortalizas 4 o más veces por día.
+
+\
 
 #### [**2) Modelo inicial**]{.underline}
 
@@ -161,7 +165,7 @@ modelo_simple = lm(peso ~ altura + edad + genero + dias_actividad_fisica_semanal
 tidy_modelo_simple <- tidy(modelo_simple, conf.int = TRUE)
 tidy_modelo_simple
 ```
-
+\
 El valor de $\beta_{0}$ nos indica que el peso esperado para una mujer de 0 cm de altura, 0 años, que no realiza actividad física y que no consume alcohol es de -68.92 kg.
 
 El coeficiente que multiplica a la altura $\beta_{1}$ es 0.65. Significa que ante cada cm adicional de altura el peso promedio aumenta en 0,65 kg manteniendo todas las otras variables constantes
@@ -176,11 +180,13 @@ Sin embargo, no todas las variables son significativas. Tras realizar el test de
 
 Por otro lado, el resto de las variables (altura, edad y género) sí resultan estadísticamente significativas para explicar el peso de una persona.
 
-```{r}
+```{r echo=TRUE}
 glance(modelo_simple)
 ```
 
 El $R^{2}$ del modelo, el porcentaje de variabilidad del fenómeno que el modelo logra explicar, es de 0,35. Considerando el p-valor, se rechaza la hipótesis nula del test de significatividad global y podemos concluir que al menos una de las variables regresoras sirve para explicar el peso de una persona.
+
+\
 
 #### [**3) Modelo categóricas**]{.underline}
 
@@ -193,37 +199,74 @@ $$
 Se harán algunas modificaciones para que el nivel basal del consumo semanal de snacks sea "no comí comida salada o snacks en los últimos 7 días:
 
 ```{r echo=TRUE}
-
 encuesta_salud$consumo_semanal_snacks <- relevel(as.factor(encuesta_salud$consumo_semanal_snacks), ref = "No comí comida salada o snacks en los últimos 7 días")
 
 modelo_categoricas = lm(peso ~ altura + edad + genero + consumo_semanal_snacks + genero * edad, data=encuesta_salud)
 
 tidy_modelo_categoricas <- tidy(modelo_categoricas, conf.int = TRUE)
 tidy_modelo_categoricas
-
 ```
+\
+En este caso $\beta_{0}$ nos indica que el peso promedio de una mujer de 0 años, 0 cm, que no consume comida salada ni snacks es de -64.2 kg.
 
-INTERPRETACION COEFICIENTES (individial, conjunta e interacción)
+Las distintas categorías de consumoSemanalSnacks (por ejemplo, consumo_semanal_snacks1 a 3 veces durante los últimos 7 días) reflejan la diferencia de peso entre una persona que no consume snacks vs una persona que consume snacks con la frecuencia que refleja la categoría. No todas las categorías de consumo semanal de snacks resultan significativas, solo algunas de ellas. Vamo
 
-¿Cuál es la interpretación de los coeficientes estimados para las categorías de consumoSemanalSnacks y genero . edad? ¿Son significativas? ¿Qué porcentaje de la variabilidad explica el modelo?
+Por otro lado, el coeficiente edad.generoMasculino en este caso refleja que, para los hombres, un año adicional de edad aumenta el peso promedio en 1,22 + 0,39 kg manteniendo constantes el resto de las variables. La variable tiene un efecto significativo para explicar el peso.
 
-CONJUNTA
+Vamos a ver qué porcentaje de la variabilidad explica el modelo
+
+```{r echo=TRUE}
+glance(modelo_categoricas)
+```
+\
+Por último, considerando que algunas categorías consumoSemanalSnacks no resultan significativa, se va a realizar un test F para evaluar la significatividad conjunta de la variable en su conjunto para explicar al peso.
 
 ```{r}
-tidy(anova(modelo_simple))
+tidy(anova(modelo_categoricas))
 ```
 
-En caso de detectar que existen categorías no significativas de la variable consumoSemanalSnacks evaluar si la variable es significativa en su conjunto y, en caso afirmativo, proponer una redefinición de las mismas que permita obtener una mayor proporción de categorías significativas individualmente.
+Considerando el p-valor, se concluye que la variable consumo_semanal_snacks es significativa para explicar el peso de una persona.
 
-Considerando que las categorías de la consumoSemanalSnacks no significativas hacen referencia al consumo de verduras más de una vez por día, se va a consolidar en una única y se van a volver a estimar los coeficientes.
+A continuación, se va a proponer un nueva definición de las categorías de consumoSemanalSnacks: se van a juntar "consume snacks 1 vez al día", "consume snacks 2 veces al día", "consume snacks 3 veces al día" y "consume snacks 4 o más veces al día" en una única categoría "consume snacks todos los días", y se van a volver a estimar los coeficientes.
 
-Luego, analizar si existen cambios en la variabilidad explicada por el modelo.
+```{r}
+encuesta_salud$consumo_semanal_snacks_new <- ifelse(encuesta_salud$consumo_semanal_snacks %in% c("1 vez al día", "2 veces al día", "3 veces al día", "4 o más veces al día"), 
+                                                    "Consume snacks todos los días", 
+                                                    as.character(encuesta_salud$consumo_semanal_snacks))
+```
+
+```{r}
+encuesta_salud$consumo_semanal_snacks_new <- relevel(as.factor(encuesta_salud$consumo_semanal_snacks_new), ref = "No comí comida salada o snacks en los últimos 7 días")
+
+modelo_categoricas_grouped = lm(peso ~ altura + edad + genero + consumo_semanal_snacks_new + genero * edad, data=encuesta_salud)
+
+tidy_modelo_categoricas_grouped <- tidy(modelo_categoricas_grouped, conf.int = TRUE)
+tidy_modelo_categoricas_grouped
+
+```
+
+
+```{r}
+tidy(anova(modelo_categoricas_grouped))
+```
+\
+Se observa que todas las variables incluídas en el nuevo modelo son significativas (incluídas todas las categorías de consumo semanal de snacks).
+
+A continuación, se va a consultar la variabilidad explicada por el modelo:
+
+```{r}
+glance(modelo_categoricas_grouped)
+```
+Con la nueva agrupación no hay una mejora en el $R^2$ del modelo.
+
+\
 
 #### [**4) Modelos propios y evaluación**]{.underline}
 
 A continuación, se sugieren dos posibles modelos adicionales para intentar explicar el peso de una persona:
 
-A: $$
+A: 
+$$
 E(peso) = \beta_{0} + \beta_{1} altura+ \beta_{2} edad+ \beta_{3} genero + \beta_{4} consumoSemanalSnacks + \beta_{5} genero.edad
 $$
 
@@ -239,11 +282,14 @@ Evaluar la performance del modelo inicial, el modelo categóricas con las catego
 
 ¿Cuál es el mejor modelo para nuestro objetivo de predecir el peso? ¿Por qué?
 
+
+\
+
 #### [**5) Diagnóstico del modelo**]{.underline}
 
 Analizar en profundidad el cumplimiento de los supuestos del modelo lineal para el modelo inicial.
 
-```{r}
+```{r fig.width= 6}
 plot(modelo_simple)
 ```
 
