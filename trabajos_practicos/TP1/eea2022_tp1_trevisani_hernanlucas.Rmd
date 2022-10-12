@@ -267,18 +267,60 @@ A continuación, se sugieren dos posibles modelos adicionales para intentar expl
 
 A: 
 $$
-E(peso) = \beta_{0} + \beta_{1} altura+ \beta_{2} edad+ \beta_{3} genero + \beta_{4} consumoSemanalSnacks + \beta_{5} genero.edad
-$$
+E(peso) = \beta_{0} + \beta_{1} altura+ \beta_{2} edad+ \beta_{3} genero + \beta_{4} consumoSemanalSnacks + \beta_{5} consumoSemanalGaseosa + \beta_{6} diasConsumoComidaRapida + \beta_{7} genero.edad + \beta_{8} genero.altura
+$$ 
 
 B:
 
 $$
-E(peso) = \beta_{0} + \beta_{1} altura+ \beta_{2} edad+ \beta_{3} genero + \beta_{4} consumoSemanalSnacks + \beta_{5} genero.edad
+E(peso) = \beta_{0} + \beta_{1} altura+ \beta_{2} edad+ \beta_{3} genero + \beta_{4} consumoSemanalSnacks + \beta_{5} frecuenciaHambreSemanal + \beta_{6} genero.edad + \beta_{7} genero.altura
 $$
 
-Realizar 2 modelos lineales múltiples adicionales y explicar brevemente la lógica detrás de los mismos (se valorará la creación y/o inclusión de variables nuevas).
+El primer modelo propuesto incorpora una interacción entre género y altura, y el consumo semanal de gaseosa y de comida rápida.
+
+El segundo modelo propuesto, además de la interacción entre género y altura, incorpora la frecuencia de hambre semanal.
 
 Evaluar la performance del modelo inicial, el modelo categóricas con las categorías redefinidas de la variable consumoSemanalSnacks y los modelos desarrollados en este punto en el dataset de entrenamiento y evaluación (usar dataset "encuesta_salud_test.csv"). La evaluación de performance consiste en comparar la performance en términos del R cuadrado ajustado, RMSE y MAE sobre el set de entrenamiento y en términos de RMSE y MAE sobre el set de evaluación.
+
+
+```{r}
+encuesta_salud_test <- read.csv("encuesta_salud_test.csv")
+```
+
+
+
+```{r}
+# armamos lista con todos los modelos
+models <- list(modelo_simple = modelo_simple, 
+               modelo_categorias = modelo_categoricas_grouped, 
+               modelo_a = modelo_a, 
+               modelo_b = modelo_b)
+```
+
+
+```{r}
+evaluacion_train = map_df(models, glance, .id = "model") %>%
+  # ordenamos por R2 ajustado
+  arrange(desc(adj.r.squared))
+```
+
+
+```{r}
+lista_predicciones_training = map(.x = models, .f = augment) 
+
+# Obtenemos el RMSE para los 4 modelos
+map_dfr(.x = lista_predicciones_training, .f = rmse, truth = price, estimate = .fitted, .id="modelo") %>% arrange(.estimate)
+```
+
+
+```{r}
+# Aplicamos la función augment a los 4 modelos con el set de testing
+lista_predicciones_testing = map(.x = models, .f = augment, newdata = test_data) 
+
+# Obtenemos el RMSE para los 4 modelos
+map_dfr(.x = lista_predicciones_testing, .f = rmse, truth = price, estimate = .fitted, .id="modelo") %>% arrange(.estimate)
+```
+
 
 ¿Cuál es el mejor modelo para nuestro objetivo de predecir el peso? ¿Por qué?
 
@@ -293,7 +335,59 @@ Analizar en profundidad el cumplimiento de los supuestos del modelo lineal para 
 plot(modelo_simple)
 ```
 
+
+
+Residuos vs valores predichos: Parece existir cierta estructura en los datos: la varianza parece incrementarse con los valores predichos (depende de la variable), por lo que no se satisface el supuesto de homocedasticidad.
+
+Normal QQ plot: El extremo superior derecho e izquierdo inferior no se ajustan a la distribución teórica.
+
+Residual vs leverage: Existen algunos puntos con un leverage bastante alto.
+
+Diagnóstico del modelo: El modelo creado no cumple con los supuestos del modelo lineal. Parecen existir problemas de heterocedasticidad (varianza no constante), falta de normalidad y presencia de observaciones de alto leverage.
+
+
+Residuos vs valores predichos: Parece existir cierta estructura en los datos: la varianza parece incrementarse con los valores predichos y luego se reduce (depende de la variable), por lo que no se satisface el supuesto de homocedasticidad.
+
+Normal QQ plot: El El extremo superior derecho e izquierdo inferior no se ajustan a la distribución teórica, por lo que no parecen seguir una distribución normal.
+
+Residual vs leverage: Existe un punto con un leverage más alto.
+
+
+
+
 #### [**6) Modelo robusto**]{.underline}
+
+Por último, se va a leer un nuevo dataset con algunos valores atípicos y vamos a volver a observar la relación entre peso y altura:
+
+```{r}
+encuesta_salud <- read.csv("encuesta_salud_modelo6.csv")
+
+```
+
+```{r}
+modelo_simple = lm(peso ~ altura + edad + genero + dias_actividad_fisica_semanal + consumo_diario_alcohol, data=encuesta_salud)
+
+tidy_modelo_simple <- tidy(modelo_simple, conf.int = TRUE)
+tidy_modelo_simple
+```
+
+coeficientes estimados:
+
+r^2
+
+```{r}
+glance(modelo_categoricas)
+```
+
+```{r}
+pred_varias_l3 = augment(modelo_varias_l3, newdata = test_data) 
+rmse(data = pred_varias_l3, truth = price, estimate = .fitted)
+
+```
+
+pred_varias_l3 = augment(modelo_varias_l3, newdata = test_data) 
+
+
 
 Leer el archivo "encuesta_salud_modelo6.csv". Este último consiste en el dataset original de train con la incorporación de algunas observaciones adicionales que pueden incluir valores atípicos. En particular, observar la relación entre peso y altura ¿Qué ocurre con estos nuevos datos?
 
