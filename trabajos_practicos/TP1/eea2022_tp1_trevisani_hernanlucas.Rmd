@@ -52,6 +52,7 @@ library(tidymodels)
 library(ggplot2)
 library(knitr)
 library(GGally)
+library(robust)
 
 options(scipen=999)
 
@@ -145,7 +146,7 @@ ggplot(tabla) +
  scale_x_discrete(limits = order)
 ```
 
-En estos gráficos, se puede observar que aquellos que suelen pasar hambre (siempre o casi siempre) registran un menor consumo de verduras y hortalizas. En los primeros también hay un alto porcentaje de peresonas que comen verduras y/o hortalizas 4 o más veces por día.
+En estos gráficos, se puede observar que aquellos que suelen pasar hambre (siempre o casi siempre) registran un menor consumo de verduras y hortalizas. En los primeros también hay un alto porcentaje de peresonas que comen verduras y/o hortalizas 4 o más veces por día lo que de alguna manera también habla de lo poco balanceadas que son sus dietas.
 
 \
 
@@ -190,7 +191,7 @@ El $R^{2}$ del modelo, el porcentaje de variabilidad del fenómeno que el modelo
 
 #### [**3) Modelo categóricas**]{.underline}
 
-Luego, se probará con un modelo que incopore el consumo semanal de snacks y una interacción entre el género y la edad, en lugar de actividad física y consumo de alcohol:
+Luego, se probará con un modelo que incopora el consumo semanal de snacks y una interacción entre el género y la edad, en lugar de actividad física y consumo de alcohol:
 
 $$
 E(peso) = \beta_{0} + \beta_{1} altura+ \beta_{2} edad+ \beta_{3} genero + \beta_{4} consumoSemanalSnacks + \beta_{5} genero.edad
@@ -209,17 +210,17 @@ tidy_modelo_categoricas
 \
 En este caso $\beta_{0}$ nos indica que el peso promedio de una mujer de 0 años, 0 cm, que no consume comida salada ni snacks es de -64.2 kg.
 
-Las distintas categorías de consumoSemanalSnacks (por ejemplo, consumo_semanal_snacks1 a 3 veces durante los últimos 7 días) reflejan la diferencia de peso entre una persona que no consume snacks vs una persona que consume snacks con la frecuencia que refleja la categoría. No todas las categorías de consumo semanal de snacks resultan significativas, solo algunas de ellas. Vamo
+Las distintas categorías de consumoSemanalSnacks (por ejemplo, consumo_semanal_snacks1 a 3 veces durante los últimos 7 días) reflejan la diferencia de peso entre una persona que no consume snacks vs una persona que consume snacks con la frecuencia que refleja la categoría. No todas las categorías de consumo semanal de snacks resultan significativas: aquellas que surgen de consumir snacks todos los días son las que no lo son.
 
 Por otro lado, el coeficiente edad.generoMasculino en este caso refleja que, para los hombres, un año adicional de edad aumenta el peso promedio en 1,22 + 0,39 kg manteniendo constantes el resto de las variables. La variable tiene un efecto significativo para explicar el peso.
 
-Vamos a ver qué porcentaje de la variabilidad explica el modelo
+Vamos a ver qué porcentaje de la variabilidad explica el modelo:
 
 ```{r echo=TRUE}
 glance(modelo_categoricas)
 ```
 \
-Por último, considerando que algunas categorías consumoSemanalSnacks no resultan significativa, se va a realizar un test F para evaluar la significatividad conjunta de la variable en su conjunto para explicar al peso.
+Por último, considerando que algunas categorías consumoSemanalSnacks no resultan significativas, se va a realizar un test F para evaluar la significatividad conjunta de la variable para explicar al peso.
 
 ```{r}
 tidy(anova(modelo_categoricas))
@@ -245,10 +246,6 @@ tidy_modelo_categoricas_grouped
 
 ```
 
-
-```{r}
-tidy(anova(modelo_categoricas_grouped))
-```
 \
 Se observa que todas las variables incluídas en el nuevo modelo son significativas (incluídas todas las categorías de consumo semanal de snacks).
 
@@ -267,128 +264,155 @@ A continuación, se sugieren dos posibles modelos adicionales para intentar expl
 
 A: 
 $$
-E(peso) = \beta_{0} + \beta_{1} altura+ \beta_{2} edad+ \beta_{3} genero + \beta_{4} consumoSemanalSnacks + \beta_{5} consumoSemanalGaseosa + \beta_{6} diasConsumoComidaRapida + \beta_{7} genero.edad + \beta_{8} genero.altura
+E(peso) = \beta_{0} + \beta_{1} altura+ \beta_{2} edad+ \beta_{3} genero + \beta_{4} consumoSemanalSnacksNew + \\ \beta_{5} consumoSemanalGaseosa + \beta_{6} diasConsumoComidaRapida + \beta_{7} genero.edad + \beta_{8} genero.altura
 $$ 
 
 B:
 
 $$
-E(peso) = \beta_{0} + \beta_{1} altura+ \beta_{2} edad+ \beta_{3} genero + \beta_{4} consumoSemanalSnacks + \beta_{5} frecuenciaHambreSemanal + \beta_{6} genero.edad + \beta_{7} genero.altura
+E(peso) = \beta_{0} + \beta_{1} altura+ \beta_{2} edad+ \beta_{3} genero + \beta_{4} consumoSemanalSnacksNew + \beta_{5} frecuenciaHambreMensual + \\ \beta_{6} genero.edad + \beta_{7} genero.altura + \beta_{8} edadConsumoAlcohol . consumoDiarioAlcohol
 $$
 
 El primer modelo propuesto incorpora una interacción entre género y altura, y el consumo semanal de gaseosa y de comida rápida.
 
-El segundo modelo propuesto, además de la interacción entre género y altura, incorpora la frecuencia de hambre semanal.
+El segundo modelo propuesto, además de la interacción entre género y altura, incorpora la frecuencia de hambre mensual. y también una interacción que consiste en multiplicar la edad en la que comenzaron a consumir alcohol y el consumo diario.
 
-Evaluar la performance del modelo inicial, el modelo categóricas con las categorías redefinidas de la variable consumoSemanalSnacks y los modelos desarrollados en este punto en el dataset de entrenamiento y evaluación (usar dataset "encuesta_salud_test.csv"). La evaluación de performance consiste en comparar la performance en términos del R cuadrado ajustado, RMSE y MAE sobre el set de entrenamiento y en términos de RMSE y MAE sobre el set de evaluación.
+```{r}
+modelo_a = lm(peso ~ altura + edad + genero + consumo_semanal_snacks_new + consumo_semanal_gaseosas + dias_consumo_comida_rapida + genero * edad + genero * altura, data=encuesta_salud)
 
+tidy_modelo_a <- tidy(modelo_a, conf.int = TRUE)
+tidy_modelo_a
+```
+
+breve comentario de la significatividad de las variables.
+
+```{r}
+modelo_b = lm(peso ~ altura + edad + genero + consumo_semanal_snacks_new + frecuencia_hambre_mensual + genero * edad + genero * altura + edad_consumo_alcohol * consumo_diario_alcohol, data=encuesta_salud)
+
+tidy_modelo_b <- tidy(modelo_b, conf.int = TRUE)
+tidy_modelo_b
+```
+
+breve comentario de la significatividad de las variables.
+
+A continuación, se van a comparar los distintos modelos desarrollados. En primer lugar, se carga el dataset de test en el que vamos a medir la performance de los modelos:
 
 ```{r}
 encuesta_salud_test <- read.csv("encuesta_salud_test.csv")
 ```
 
-
+Se crea la variable consumo semanal snacks con la nueva agrupación también para el dataset de test:
 
 ```{r}
-# armamos lista con todos los modelos
+encuesta_salud_test$consumo_semanal_snacks_new <- ifelse(encuesta_salud_test$consumo_semanal_snacks %in% c("1 vez al día", "2 veces al día", "3 veces al día", "4 o más veces al día"), 
+                                                    "Consume snacks todos los días", 
+                                                    as.character(encuesta_salud_test$consumo_semanal_snacks))
+```
+
+Se arma una lista con todos los modelos construídos
+
+```{r}
 models <- list(modelo_simple = modelo_simple, 
                modelo_categorias = modelo_categoricas_grouped, 
                modelo_a = modelo_a, 
                modelo_b = modelo_b)
 ```
 
+En el dataset de train, se observa el r2 de todos los modelos
 
 ```{r}
 evaluacion_train = map_df(models, glance, .id = "model") %>%
   # ordenamos por R2 ajustado
   arrange(desc(adj.r.squared))
+
+evaluacion_train
 ```
 
+breve comentario de los r2 y los r2 ajust.
+
+A continuación, se van a calcular RMSE y MAE tanto para train como para test:
 
 ```{r}
-lista_predicciones_training = map(.x = models, .f = augment) 
+lista_predicciones_training = map(.x = models, .f = augment)
+lista_predicciones_testing = map(.x = models, .f = augment, newdata = encuesta_salud_test)
 
-# Obtenemos el RMSE para los 4 modelos
-map_dfr(.x = lista_predicciones_training, .f = rmse, truth = price, estimate = .fitted, .id="modelo") %>% arrange(.estimate)
+cbind(map_dfr(.x = lista_predicciones_training, .f = rmse, truth = peso, estimate = .fitted, .id="modelo") %>% rename(rmse_train = .estimate) %>% select(modelo, rmse_train) %>% arrange(modelo),
+map_dfr(.x = lista_predicciones_training, .f = mae, truth = peso, estimate = .fitted, .id="modelo") %>% rename(mae_train = .estimate) %>% arrange(modelo) %>% select(mae_train),
+map_dfr(.x = lista_predicciones_testing, .f = rmse, truth = peso, estimate = .fitted, .id="modelo") %>% rename(rmse_test = .estimate) %>% arrange(modelo) %>% select(rmse_test),
+map_dfr(.x = lista_predicciones_testing, .f = mae, truth = peso, estimate = .fitted, .id="modelo") %>% rename(mae_test = .estimate) %>% arrange(modelo) %>% select(mae_test)) %>% arrange(rmse_test)
+
 ```
 
+Para definir cual es el mejor modelo, se decide comparar el RMSE en test de los distintos modelo con el objetivo de entender qué tan bien generaliza el modelo en datos nuevos:
 
-```{r}
-# Aplicamos la función augment a los 4 modelos con el set de testing
-lista_predicciones_testing = map(.x = models, .f = augment, newdata = test_data) 
-
-# Obtenemos el RMSE para los 4 modelos
-map_dfr(.x = lista_predicciones_testing, .f = rmse, truth = price, estimate = .fitted, .id="modelo") %>% arrange(.estimate)
-```
-
-
-¿Cuál es el mejor modelo para nuestro objetivo de predecir el peso? ¿Por qué?
-
+Se observa que el mejor modelo es X que tiene el menor RMSE en test. y además, se observa que coincide con que es también el de menor X X X X
 
 \
 
 #### [**5) Diagnóstico del modelo**]{.underline}
 
-Analizar en profundidad el cumplimiento de los supuestos del modelo lineal para el modelo inicial.
+En la siguiente sección, se observará el cumplimiento de los supuestos del modelo lineal para el modelo inicial.
+
+Los supuestos a analizar son los siguientes:
+
 
 ```{r fig.width= 6}
 plot(modelo_simple)
 ```
 
+Al utilizar plot() sobre el modelo ajustado, se pueden observar varios gráficos que nos van a permitir analizar los supuestos del modelo lineal:
 
 
-Residuos vs valores predichos: Parece existir cierta estructura en los datos: la varianza parece incrementarse con los valores predichos (depende de la variable), por lo que no se satisface el supuesto de homocedasticidad.
+Residuos vs valores predichos: No parece existir una estructura clara entre los residuos y los valores predichos. Sucede algo similar en el gráfico scale-location.
 
-Normal QQ plot: El extremo superior derecho e izquierdo inferior no se ajustan a la distribución teórica.
+Normal QQ plot: El extremo superior derecho no se ajusta a la distribución teórica, en este caso la ∼N(0,1), por lo que se deduce que los residuos estandarizados no siguen esa distribución.
 
-Residual vs leverage: Existen algunos puntos con un leverage bastante alto.
-
-Diagnóstico del modelo: El modelo creado no cumple con los supuestos del modelo lineal. Parecen existir problemas de heterocedasticidad (varianza no constante), falta de normalidad y presencia de observaciones de alto leverage.
+Residual vs leverage: Existen algunos puntos con un leverage bastante alto. Vamos a ver cuál es la observación para entender si se trata de un posible outlier:
 
 
-Residuos vs valores predichos: Parece existir cierta estructura en los datos: la varianza parece incrementarse con los valores predichos y luego se reduce (depende de la variable), por lo que no se satisface el supuesto de homocedasticidad.
+```{r}
+lista_predicciones_training$modelo_simple %>%
+  filter(.hat == max(.hat))
 
-Normal QQ plot: El El extremo superior derecho e izquierdo inferior no se ajustan a la distribución teórica, por lo que no parecen seguir una distribución normal.
-
-Residual vs leverage: Existe un punto con un leverage más alto.
-
-
-
+```
 
 #### [**6) Modelo robusto**]{.underline}
 
 Por último, se va a leer un nuevo dataset con algunos valores atípicos y vamos a volver a observar la relación entre peso y altura:
 
 ```{r}
-encuesta_salud <- read.csv("encuesta_salud_modelo6.csv")
-
+encuesta_salud_outliers <- read.csv("encuesta_salud_modelo6.csv")
 ```
+
+Observamos el modelo ajustado:
 
 ```{r}
-modelo_simple = lm(peso ~ altura + edad + genero + dias_actividad_fisica_semanal + consumo_diario_alcohol, data=encuesta_salud)
+modelo_robusto <- lmRob(peso ~ altura + edad + genero + dias_actividad_fisica_semanal + consumo_diario_alcohol,data = encuesta_salud_outliers)
 
-tidy_modelo_simple <- tidy(modelo_simple, conf.int = TRUE)
-tidy_modelo_simple
+tidy_modelo_robusto <- tidy(modelo_robusto)
+tidy_modelo_robusto
 ```
-
 coeficientes estimados:
 
-r^2
+los coeficientes que multiplican la altura y la edad no cambian sustancialmente, y siguen siendo significativos para explicar el peso de una persona. algo similar sucede con el coeficiente que acompaña al género. Días de actividad física semanal y consumo diario de alcohol siguen siendo no significativas para explicar el peso. 
+
+Ahora observamos el porcentaje de la varianza explicada por el modelo:
 
 ```{r}
-glance(modelo_categoricas)
+glance(modelo_robusto)
 ```
+se observa una baja considerable del $R^2$ de este nuevo modelo. Pasa de cerca del 0,35 a un 0,28.
+
+A continuación, vamos a observar que tan bien performa el modelo en datos nuevos. Se va a utilizar nuevamente el RMSE y el MAE:
 
 ```{r}
-pred_varias_l3 = augment(modelo_varias_l3, newdata = test_data) 
-rmse(data = pred_varias_l3, truth = price, estimate = .fitted)
+peso = predict(modelo_robusto, newdata = encuesta_salud_test, se.fit = TRUE)
+
+encuesta_salud_test$.fitted = peso$fit
+
+rbind(rmse(data = encuesta_salud_test, truth = peso, estimate = .fitted),
+mae(data = encuesta_salud_test, truth = peso, estimate = .fitted))
 
 ```
 
-pred_varias_l3 = augment(modelo_varias_l3, newdata = test_data) 
-
-
-
-Leer el archivo "encuesta_salud_modelo6.csv". Este último consiste en el dataset original de train con la incorporación de algunas observaciones adicionales que pueden incluir valores atípicos. En particular, observar la relación entre peso y altura ¿Qué ocurre con estos nuevos datos?
-
-Entrenar el modelo inicial con estos nuevos datos y comentar qué se observa en los coeficientes estimados y las métricas de evaluación (R cuadrado ajustado, RMSE y MAE) respecto al modelo entrenado con el set de entrenamiento original. Entrenar un modelo robusto con la misma especificación que el modelo inicial sobre los nuevos datos. Comparar los coeficientes y su performance (RMSE y MAE) respecto al modelo inicial no robusto entrenado en este punto. ¿Qué puede concluir al respecto? Nota: los registros que se suman en este punto son observaciones ficticias que se generaron a partir de observaciones reales del set de datos original.
+si comparamos el rmse y el mae vs los modelos anteriormente analizados, se puede ver que no se deterioró mucho la predicción del modelo. sí, podría 
