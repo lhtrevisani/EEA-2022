@@ -1,6 +1,8 @@
 ---
 title: "Enfoque estadístico del aprendizaje"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 
 # [**Trabajo práctico nº1: regresión lineal**]{.underline}
@@ -46,7 +48,7 @@ El objetivo general del trabajo es poder crear una serie de modelos lineales par
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
+```{r, message = FALSE}
 library(tidyverse)
 library(tidymodels)
 library(ggplot2)
@@ -78,17 +80,19 @@ encuesta_salud %>% sample_n(5)
 ```
 
 \
-Observo las dimensiones del dataset:
+Observo las dimensiones, los tipos de las variables y algunos ejemplos de cada una de ellas:
 
 ```{r echo=TRUE}
 glimpse(encuesta_salud)
 ```
 
+\
 Aquí se puede ver que el dataset cuenta con 7024 observaciones para las cuales se tienen 16 variables (7 de ellas numéricas y 9 categóricas). La variable peso, que es una de las variables numéricas, es la variable a explicar con el resto.
 
 A continuación, observamos si las variables numéricas - y fundamentalmente el peso - están correlacionadas o no. Para ello, se procede a aperturar por el género de cada una de las personas:
+\
 
-```{r echo=TRUE, fig.width = 12, fig.height = 8}
+```{r echo=TRUE, fig.width = 12, fig.height = 8, message = FALSE, warning=FALSE}
 encuesta_salud %>%
   select(where(is.numeric), genero, -record) %>%
   ggpairs(mapping = aes(color = genero), title = "Matriz de correlaciones",
@@ -98,7 +102,7 @@ encuesta_salud %>%
 
 ```
 
-En los gráficos, se observa que existe cierta correlación entre entre el peso y la altura (0,57 para las personas de género masculino, 0,44 para las de género femenino. También hay una correlación moderada entre la edad y el peso.
+En los gráficos, se observa que existe correlación lineal de moderada a fuerte entre el peso y la altura (0,57 para las personas de género masculino, 0,44 para las de género femenino. También hay una correlación moderada entre la edad y el peso (0.285)
 
 ```{r echo=TRUE}
 encuesta_salud %>% 
@@ -117,7 +121,7 @@ encuesta_salud %>%
 ```
 
 \
-Para cada una de ellas, observamos cómo se distribuyen el consumo semanal de verdura y el consumo semanal de comida grasa:
+Para cada una de ellas, observamos cómo se distribuye el consumo semanal de verdura:
 
 ```{r echo=TRUE, height = 6, fig.align='center'}
 tabla = encuesta_salud %>%
@@ -147,6 +151,40 @@ ggplot(tabla) +
 ```
 
 En estos gráficos, se puede observar que aquellos que suelen pasar hambre (siempre o casi siempre) registran un menor consumo de verduras y hortalizas. En los primeros también hay un alto porcentaje de peresonas que comen verduras y/o hortalizas 4 o más veces por día lo que de alguna manera también habla de lo poco balanceadas que son sus dietas.
+
+Observamos el mismo gráfico, pero para la frecuencia de hambre y el consumo de comidas grasas:
+
+```{r echo=TRUE, height = 6, fig.align='center'}
+tabla = encuesta_salud %>%
+  filter(frecuencia_hambre_mensual != 'Dato perdido') %>%
+  filter(consumo_semanal_comida_grasa != 'Dato perdido') %>%
+  select(consumo_semanal_comida_grasa, frecuencia_hambre_mensual) %>%
+  table()
+tabla = as.data.frame(tabla)
+colnames(tabla) <- c("consumo_semanal_comida_grasa", "frecuencia_hambre_mensual", "q")
+
+order = c("Nunca", "Rara vez", "Algunas veces", "Casi siempre", "Siempre")
+type = c("4 o más veces al día", "3 veces al día", "2 veces al día", "1 vez al día", "4 a 6 veces durante los últimos 7 días", "1 a 3 veces durante los últimos 7 días", "No comí comida alta en grasa en los últimos 7 días")
+
+
+ggplot(tabla) +
+ aes(x = frecuencia_hambre_mensual, 
+     fill = factor(str_wrap(consumo_semanal_comida_grasa, 20), levels = str_wrap(type, 20)),
+     weight = q) +
+ geom_bar(position = "fill") +
+ scale_fill_hue(direction = 1) +
+ coord_flip() +
+ theme_minimal() +
+ theme(legend.position = "bottom") + 
+ theme(legend.title=element_blank()) + 
+ labs(x = "Frecuencia de hambre",  y = "Consumo de comida grasa (proporción)", title = "Consumo de comida grasa y cantidad de veces con hambre en el mes") + 
+ scale_x_discrete(limits = order)
+```
+\
+
+En cuanto a comida grasa, se ve que aquellos que suelen pasar hambre tienen un alto consumo: muchos de ellos consumen todos los días. 
+
+Se ve en los dos gráficos que los que más frecuentemente pasan hambre son los que suelen tener peores hábitos alimenticios y/o dietas menos balanceadas.
 
 \
 
@@ -219,13 +257,15 @@ Vamos a ver qué porcentaje de la variabilidad explica el modelo:
 ```{r echo=TRUE}
 glance(modelo_categoricas)
 ```
+El $R^{2}$ del modelo es de 0,3585.
 \
+
 Por último, considerando que algunas categorías consumoSemanalSnacks no resultan significativas, se va a realizar un test F para evaluar la significatividad conjunta de la variable para explicar al peso.
 
 ```{r}
 tidy(anova(modelo_categoricas))
 ```
-
+\
 Considerando el p-valor, se concluye que la variable consumo_semanal_snacks es significativa para explicar el peso de una persona.
 
 A continuación, se va a proponer un nueva definición de las categorías de consumoSemanalSnacks: se van a juntar "consume snacks 1 vez al día", "consume snacks 2 veces al día", "consume snacks 3 veces al día" y "consume snacks 4 o más veces al día" en una única categoría "consume snacks todos los días", y se van a volver a estimar los coeficientes.
@@ -254,7 +294,7 @@ A continuación, se va a consultar la variabilidad explicada por el modelo:
 ```{r}
 glance(modelo_categoricas_grouped)
 ```
-Con la nueva agrupación no hay una mejora en el $R^2$ del modelo.
+Sin embargo, con la nueva agrupación no hay una mejora en el $R^2$ ni en el $R^2 ajustado$ del modelo.
 
 \
 
@@ -262,20 +302,35 @@ Con la nueva agrupación no hay una mejora en el $R^2$ del modelo.
 
 A continuación, se sugieren dos posibles modelos adicionales para intentar explicar el peso de una persona:
 
+\
 A: 
 $$
 E(peso) = \beta_{0} + \beta_{1} altura+ \beta_{2} edad+ \beta_{3} genero + \beta_{4} consumoSemanalSnacksNew + \\ \beta_{5} consumoSemanalGaseosa + \beta_{6} diasConsumoComidaRapida + \beta_{7} genero.edad + \beta_{8} genero.altura
 $$ 
 
+\
+El primer modelo propuesto incorpora una interacción entre género y altura, ya que es posible que un cm adicional de altura contribuya al peso distinto en hombres y mujeres.Y el consumo semanal de gaseosa y de comida rápida, dos factores que pueden contribuir enormemente en el aumento de peso de un niño.
+
 B:
 
 $$
-E(peso) = \beta_{0} + \beta_{1} altura+ \beta_{2} edad+ \beta_{3} genero + \beta_{4} consumoSemanalSnacksNew + \beta_{5} frecuenciaHambreMensual + \\ \beta_{6} genero.edad + \beta_{7} genero.altura + \beta_{8} edadConsumoAlcohol . consumoDiarioAlcohol
+E(peso) = \beta_{0} + \beta_{1} altura+ \beta_{2} edad+ \beta_{3} genero + \beta_{4} edad^2 + \beta_{6} genero.edad + \beta_{7} genero.altura + \beta_{7} haceActividadFisica + \\ \beta_{7} haceActividadFisica . edad +\beta_{7} buenoshabitos
 $$
 
-El primer modelo propuesto incorpora una interacción entre género y altura, y el consumo semanal de gaseosa y de comida rápida.
+El segundo modelo propuesto, además de la interacción entre género y altura, incorpora la edad al cuadrado para que explique el efecto de una eventual desaceleración del aumento del peso a medida que aumenta la edad, la variable hace_actividad_fisica que va a ser un booleano que va a tomar valor 1 en caso de que haga actividad física 3 o más veces por semana, la variable buenos_habitos que va a ser un valor entero que va a tratar de reflejar cuántos hábitos buenos acumula una persona: va a ser la sumatoria de lo siguiente:
 
-El segundo modelo propuesto, además de la interacción entre género y altura, incorpora la frecuencia de hambre mensual. y también una interacción que consiste en multiplicar la edad en la que comenzaron a consumir alcohol y el consumo diario.
+- si consume comida rápida más de 1 vez por semana: -1
+- si consume más de 1 trago del alcohol por día: -1
+- si hace actividad física 3 o más veces por semana: +1
+- si consume frutas todos los días: + 1
+- si consume verduras todos los días: + 1
+- si toma gaseosa todos los días: -1
+- si consume snacks todos los días: -1
+- si come comida grasa todos los días: -1
+
+y por último, una interacción entre la edad y la variable hace_actividad_fisica, posiblemente un año adicional de vida no aporte lo mismo al peso promedio si hace o no actividad física.
+
+Observamos el ajuste del **modelo A**:
 
 ```{r}
 modelo_a = lm(peso ~ altura + edad + genero + consumo_semanal_snacks_new + consumo_semanal_gaseosas + dias_consumo_comida_rapida + genero * edad + genero * altura, data=encuesta_salud)
@@ -283,32 +338,71 @@ modelo_a = lm(peso ~ altura + edad + genero + consumo_semanal_snacks_new + consu
 tidy_modelo_a <- tidy(modelo_a, conf.int = TRUE)
 tidy_modelo_a
 ```
-
-breve comentario de la significatividad de las variables.
+\
+también observamos lo que resulta de realizar el test de significatividad conjunta de las variables del modelo:
 
 ```{r}
-modelo_b = lm(peso ~ altura + edad + genero + consumo_semanal_snacks_new + frecuencia_hambre_mensual + genero * edad + genero * altura + edad_consumo_alcohol * consumo_diario_alcohol, data=encuesta_salud)
+tidy(anova(modelo_a))
+```
+
+\
+Observando la significatividad conjunta de las variables, todas ellas resultan significativas, salvo los días de consumo de comida rápida. Si observamos la significatividad individual de cada una de las categorías, hay algunas de ellas que no resultan significativas, quizás sea una buena idea agrupar de otra forma.
+
+A continuación, se crean las variables nuevas que se van a incluir en el segundo modelo:
+
+```{r}
+encuesta_salud = encuesta_salud %>%
+  mutate(hace_actividad_fisica = if_else(dias_actividad_fisica_semanal >= 3, 1, 0),
+         buenos_habitos = if_else(dias_consumo_comida_rapida > 0, -1, 0) +
+                          if_else(consumo_diario_alcohol > 1, -1, 0) +
+                          if_else(consumo_semanal_frutas %in% c("1 vez al día", "2 veces al día", "3 veces al día", "4 o más veces al día"), 1, 0) +
+                          if_else(hace_actividad_fisica == 1, 1, 0) +
+                          if_else(consumo_semanal_verdura %in% c("1 vez al día", "2 veces al día", "3 veces al día", "4 o más veces al día"), 1, 0) +
+                          if_else(consumo_semanal_gaseosas %in% c("1 vez al día", "2 veces al día", "3 veces al día", "4 o más veces al día"), -1, 0) +
+                          if_else(consumo_semanal_snacks %in% c("1 vez al día", "2 veces al día", "3 veces al día", "4 o más veces al día"), -1, 0) +
+                          if_else(consumo_semanal_comida_grasa %in% c("1 vez al día", "2 veces al día", "3 veces al día", "4 o más veces al día"), -1, 0),
+         edad_cuadrada = edad * edad
+                          )
+```
+\
+Ajuste del **modelo B**  :
+```{r}
+modelo_b = lm(peso ~ altura + edad + genero + edad_cuadrada + genero * edad + genero * altura + hace_actividad_fisica + hace_actividad_fisica * edad + buenos_habitos, data=encuesta_salud)
 
 tidy_modelo_b <- tidy(modelo_b, conf.int = TRUE)
 tidy_modelo_b
 ```
+\
+Se observa que la edad cuadrada, "hace_actividad_fisica" (y las interacciones armadas) y "buenos_habitos" no resultan significativas para explicar el peso de un adolescente.
 
-breve comentario de la significatividad de las variables.
-
+\
 A continuación, se van a comparar los distintos modelos desarrollados. En primer lugar, se carga el dataset de test en el que vamos a medir la performance de los modelos:
 
 ```{r}
 encuesta_salud_test <- read.csv("encuesta_salud_test.csv")
 ```
-
-Se crea la variable consumo semanal snacks con la nueva agrupación también para el dataset de test:
+\
+Se crea la variable consumo semanal snacks con la nueva agrupación también para el dataset de test y lo mismo con el resto de las variables creadas:
 
 ```{r}
 encuesta_salud_test$consumo_semanal_snacks_new <- ifelse(encuesta_salud_test$consumo_semanal_snacks %in% c("1 vez al día", "2 veces al día", "3 veces al día", "4 o más veces al día"), 
                                                     "Consume snacks todos los días", 
                                                     as.character(encuesta_salud_test$consumo_semanal_snacks))
-```
 
+encuesta_salud_test = encuesta_salud_test %>%
+  mutate(hace_actividad_fisica = if_else(dias_actividad_fisica_semanal >= 3, 1, 0),
+         buenos_habitos = if_else(dias_consumo_comida_rapida > 0, -1, 0) +
+                          if_else(consumo_diario_alcohol > 1, -1, 0) +
+                          if_else(consumo_semanal_frutas %in% c("1 vez al día", "2 veces al día", "3 veces al día", "4 o más veces al día"), 1, 0) +
+                          if_else(hace_actividad_fisica == 1, 1, 0) +
+                          if_else(consumo_semanal_verdura %in% c("1 vez al día", "2 veces al día", "3 veces al día", "4 o más veces al día"), 1, 0) +
+                          if_else(consumo_semanal_gaseosas %in% c("1 vez al día", "2 veces al día", "3 veces al día", "4 o más veces al día"), -1, 0) +
+                          if_else(consumo_semanal_snacks %in% c("1 vez al día", "2 veces al día", "3 veces al día", "4 o más veces al día"), -1, 0) +
+                          if_else(consumo_semanal_comida_grasa %in% c("1 vez al día", "2 veces al día", "3 veces al día", "4 o más veces al día"), -1, 0),
+         edad_cuadrada = edad * edad
+                          )
+```
+\
 Se arma una lista con todos los modelos construídos
 
 ```{r}
@@ -317,19 +411,19 @@ models <- list(modelo_simple = modelo_simple,
                modelo_a = modelo_a, 
                modelo_b = modelo_b)
 ```
-
-En el dataset de train, se observa el r2 de todos los modelos
+\
+En el dataset de train, se observa el $R^2$ de todos los modelos
 
 ```{r}
 evaluacion_train = map_df(models, glance, .id = "model") %>%
-  # ordenamos por R2 ajustado
   arrange(desc(adj.r.squared))
 
 evaluacion_train
 ```
 
-breve comentario de los r2 y los r2 ajust.
+En la tabla anterior se observa que el modelo_a es el de mayor $R^2$, seguido por el modelo que incluye las variables categorícas.
 
+\
 A continuación, se van a calcular RMSE y MAE tanto para train como para test:
 
 ```{r}
@@ -343,9 +437,9 @@ map_dfr(.x = lista_predicciones_testing, .f = mae, truth = peso, estimate = .fit
 
 ```
 
-Para definir cual es el mejor modelo, se decide comparar el RMSE en test de los distintos modelo con el objetivo de entender qué tan bien generaliza el modelo en datos nuevos:
+Para definir cual es el mejor modelo, se decide comparar el RMSE en test de los distintos modelos con el objetivo de entender qué tan bien generaliza el modelo en datos nuevos. A difrencia del MAE, al elevar al cuadrado las diferencias, penaliza aún más los grandes desvíos:
 
-Se observa que el mejor modelo es X que tiene el menor RMSE en test. y además, se observa que coincide con que es también el de menor X X X X
+Se observa que el mejor modelo es el modelo_a que tiene el menor RMSE en test. y además, se observa que coincide con que es también el de menor MAE en test.
 
 \
 
@@ -353,21 +447,27 @@ Se observa que el mejor modelo es X que tiene el menor RMSE en test. y además, 
 
 En la siguiente sección, se observará el cumplimiento de los supuestos del modelo lineal para el modelo inicial.
 
-Los supuestos a analizar son los siguientes:
+Supuestos del modelo lineal: $\varepsilon_{i} \sim N(0, \sigma ^{2})$ , $1\leq i\leq n$, independientes entre sí
 
+de lo que se desprende que:
 
-```{r fig.width= 6}
-plot(modelo_simple)
-```
+- los $\varepsilon_{i}$ tienen media 0
+- los $\varepsilon_{i}$ tienen todos la misma varianza (homocedasticidad)
+- los $\varepsilon_{i}$ tienen distribución normal.
+- los $\varepsilon_{i}$ son independientes y no correlacionados con las $X_{i}$
 
 Al utilizar plot() sobre el modelo ajustado, se pueden observar varios gráficos que nos van a permitir analizar los supuestos del modelo lineal:
 
+```{r fig.width= 4}
+plot(modelo_simple)
+```
 
+\
 Residuos vs valores predichos: No parece existir una estructura clara entre los residuos y los valores predichos. Sucede algo similar en el gráfico scale-location.
 
-Normal QQ plot: El extremo superior derecho no se ajusta a la distribución teórica, en este caso la ∼N(0,1), por lo que se deduce que los residuos estandarizados no siguen esa distribución.
+Normal QQ plot: El extremo superior derecho no se ajusta a la distribución teórica, en este caso la ∼N(0,1), por lo que se deduce que **los residuos estandarizados no siguen esa distribución.**
 
-Residual vs leverage: Existen algunos puntos con un leverage bastante alto. Vamos a ver cuál es la observación para entender si se trata de un posible outlier:
+Residual vs leverage: Existe un estudiante con un leverage por encima del resto, y que si bien no tiene un residuo considerablemente más grande, vamos a analizar el caso para entender si se trata de un posible outlier:
 
 
 ```{r}
@@ -376,6 +476,16 @@ lista_predicciones_training$modelo_simple %>%
 
 ```
 
+\
+Se observa, entre otras cosas, que se trata de la persona más baja de toda la muestra: y si observamos un boxplot con las alturas de los niños de 12 años, está considerablemente abajo del promedio:
+
+```{r, fig.align='center'}
+boxplot(encuesta_salud %>% filter(edad == 12) %>% select(altura))
+
+```
+
+Quizás sea correcto excluir ese registro de la muestra y realizar nuevamente el ajuste, o aplicar alguna regresión robusta que haga un mejor tratamiento de ese tipo de observaciones.
+
 #### [**6) Modelo robusto**]{.underline}
 
 Por último, se va a leer un nuevo dataset con algunos valores atípicos y vamos a volver a observar la relación entre peso y altura:
@@ -383,7 +493,23 @@ Por último, se va a leer un nuevo dataset con algunos valores atípicos y vamos
 ```{r}
 encuesta_salud_outliers <- read.csv("encuesta_salud_modelo6.csv")
 ```
+\
+Observo cuáles son las variables afectadas por los outliers:
 
+```{r echo=TRUE, fig.width = 12, fig.height = 8, message = FALSE, warning=FALSE}
+encuesta_salud_outliers %>%
+  select(peso,altura,edad,consumo_diario_alcohol,dias_actividad_fisica_semanal, genero) %>%
+  ggpairs(mapping = aes(color = genero), title = "Matriz de correlaciones",
+          upper = list(continuous = wrap("cor", size = 5, hjust=0.5)), legend = 25) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle=45, vjust=0.5), legend.position = "bottom")
+
+```
+\
+
+En este caso, se va a utilizar una regresión robusta para lidiar con los valores atípicos: se ve menos afectada que la regresión tradicional cuando existen estos inconvenientes porque utiliza una versión de mínimos cuadrados ponderada por los residuos para sacarle el peso a los outliers.
+
+\
 Observamos el modelo ajustado:
 
 ```{r}
@@ -392,18 +518,19 @@ modelo_robusto <- lmRob(peso ~ altura + edad + genero + dias_actividad_fisica_se
 tidy_modelo_robusto <- tidy(modelo_robusto)
 tidy_modelo_robusto
 ```
-coeficientes estimados:
 
-los coeficientes que multiplican la altura y la edad no cambian sustancialmente, y siguen siendo significativos para explicar el peso de una persona. algo similar sucede con el coeficiente que acompaña al género. Días de actividad física semanal y consumo diario de alcohol siguen siendo no significativas para explicar el peso. 
+\
+Los coeficientes que multiplican la altura y la edad no cambian sustancialmente si los comparamos con los que devolvió el primer modelo, y siguen siendo significativos para explicar el peso de una persona. Algo similar sucede con el coeficiente que acompaña al género. Días de actividad física semanal y consumo diario de alcohol siguen siendo no significativas para explicar el peso. 
 
 Ahora observamos el porcentaje de la varianza explicada por el modelo:
 
 ```{r}
 glance(modelo_robusto)
 ```
-se observa una baja considerable del $R^2$ de este nuevo modelo. Pasa de cerca del 0,35 a un 0,28.
+\
+Se observa una baja considerable del $R^2$ de este nuevo modelo. Pasa de cerca del 0,35 a un 0,28. De todos modos, es una métrica que también se ve afectada por los outliers y quizás lo apropiado sea construir una versión robusta de la misma.
 
-A continuación, vamos a observar que tan bien performa el modelo en datos nuevos. Se va a utilizar nuevamente el RMSE y el MAE:
+Para entender si el haber hecho una regresión robusta sirvió, vamos a observar qué tan bien performa el modelo en datos nuevos. Se va a utilizar nuevamente el RMSE y el MAE:
 
 ```{r}
 peso = predict(modelo_robusto, newdata = encuesta_salud_test, se.fit = TRUE)
@@ -414,5 +541,5 @@ rbind(rmse(data = encuesta_salud_test, truth = peso, estimate = .fitted),
 mae(data = encuesta_salud_test, truth = peso, estimate = .fitted))
 
 ```
-
-si comparamos el rmse y el mae vs los modelos anteriormente analizados, se puede ver que no se deterioró mucho la predicción del modelo. sí, podría 
+\
+Si comparamos el RMSE y el MAE vs los modelos anteriormente analizados, se puede ver que por más que el modelo fue entrenado en un dataset con outliers la predicción no se deterioró mucho: el RMSE es apenas mayor que el del resto de los modelo y el MAE incluso da mejor que en el resto.
